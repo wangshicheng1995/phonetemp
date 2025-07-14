@@ -1,0 +1,27 @@
+# macOS 系统文件
+.DS_Store
+**/.DS_Store
+
+# Xcode 用户状态文件（这些是个人设置，不应该共享）
+**/*.xcuserstate
+**/xcuserdata/
+**/*.xcuserdatad/
+
+# 工作区文件（可选：如果使用 workspace 则保留）
+*.xcworkspace
+
+# 构建产物
+build/
+DerivedData/
+
+# 包管理
+Packages/
+.swiftpm/
+
+# VSCode 配置文件
+.vscode/
+
+# 其他临时文件
+*.tmp
+*.swp
+*~.nib
