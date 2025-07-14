@@ -6,5 +6,18 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.phoneTemp.urlscheme</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>phoneTemp</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
