@@ -32,13 +32,23 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // 深色背景
+            // 深色背景 - 扩展到整个屏幕包括顶部
             Color(red: 0.05, green: 0.08, blue: 0.08)
-                .ignoresSafeArea()
+                .ignoresSafeArea(.all)
             
             // 主要的发光效果
             ZStack {
                 let colorScheme = currentDisplayState.colorScheme
+                
+//                Rectangle()
+//                    .fill(Color.red)
+//                    .frame(width: 2, height: UIScreen.main.bounds.height)
+//                    .opacity(0.5)
+//                
+//                Rectangle()
+//                    .fill(Color.blue)
+//                    .frame(width: UIScreen.main.bounds.width, height: 2)
+//                    .opacity(0.5)
                 
                 // 最外层模糊光晕
                 RoundedRectangle(cornerRadius: 150)
@@ -135,7 +145,7 @@ struct ContentView: View {
                         .font(.system(size: 28, weight: .bold))
                         .shadow(color: colorScheme.coreStroke[0], radius: 10)
                     
-                    Text("当前设备温度")
+                    Text("当前设备")
                         .foregroundColor(.white.opacity(0.7))
                         .font(.system(size: 16, weight: .medium))
                     
@@ -153,31 +163,39 @@ struct ContentView: View {
             }
             .animation(.easeInOut(duration: 1.5), value: currentDisplayState)
             
-            // UI 覆盖层
-            VStack {
-                // 顶部工具栏
-                HStack {
-                    // 左侧占位（保持平衡）
-                    Spacer()
-                        .frame(width: 22) // 与按钮图标宽度相同
-                    
-                    // App 名称居中
+            // UI 覆盖层 - 顶部工具栏贴近屏幕最顶部
+            VStack(spacing: 0) {
+                ZStack {
+                    // App 名称和图标
                     HStack(spacing: 8) {
+                        // App 图标
+//                        Image("temp_icon")
+//                            .resizable()
+//                            .scaledToFit()
+//                            .frame(width: 30, height: 30)
+//                            .foregroundColor(.white.opacity(0.9))
+                        
+                        // App 名称
                         Text("手机温度")
                             .foregroundColor(.white.opacity(0.9))
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.system(size: 23, weight: .medium))
                     }
-                    .frame(maxWidth: .infinity)
                     
-                    // 更多选项按钮
-                    Button(action: {}) {
-                        Image(systemName: "ellipsis")
-                            .foregroundColor(.white.opacity(0.7))
-                            .font(.system(size: 22))
+                    // 右侧更多选项按钮
+                    HStack {
+                        Spacer()
+                        
+                        Button(action: {}) {
+                            Image(systemName: "ellipsis")
+                                .foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: 22))
+                        }
                     }
                 }
                 .padding(.horizontal, 25)
-                .padding(.top, 55)
+                .padding(.top, 30) // 状态栏下方适当间距
+                .frame(maxWidth: .infinity)
+                .background(Color.clear)
                 
                 Spacer()
             }
