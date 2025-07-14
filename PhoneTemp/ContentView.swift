@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject private var thermalManager = ThermalStateManager()
     @State private var animationProgress: CGFloat = 0
     @State private var glowIntensity: Double = 0.5
+    @State private var showCoolingTips = false
     
     // 用于开发阶段预览的自定义热状态
     private let customThermalState: ThermalState?
@@ -39,16 +40,6 @@ struct ContentView: View {
             // 主要的发光效果
             ZStack {
                 let colorScheme = currentDisplayState.colorScheme
-                
-//                Rectangle()
-//                    .fill(Color.red)
-//                    .frame(width: 2, height: UIScreen.main.bounds.height)
-//                    .opacity(0.5)
-//                
-//                Rectangle()
-//                    .fill(Color.blue)
-//                    .frame(width: UIScreen.main.bounds.width, height: 2)
-//                    .opacity(0.5)
                 
                 // 最外层模糊光晕
                 RoundedRectangle(cornerRadius: 150)
@@ -145,7 +136,7 @@ struct ContentView: View {
                         .font(.system(size: 28, weight: .bold))
                         .shadow(color: colorScheme.coreStroke[0], radius: 10)
                     
-                    Text("当前设备")
+                    Text("当前状态")
                         .foregroundColor(.white.opacity(0.7))
                         .font(.system(size: 16, weight: .medium))
                     
@@ -163,19 +154,12 @@ struct ContentView: View {
             }
             .animation(.easeInOut(duration: 1.5), value: currentDisplayState)
             
-            // UI 覆盖层 - 顶部工具栏贴近屏幕最顶部
+            // UI 覆盖层
             VStack(spacing: 0) {
+                // 顶部工具栏
                 ZStack {
                     // App 名称和图标
                     HStack(spacing: 8) {
-                        // App 图标
-//                        Image("temp_icon")
-//                            .resizable()
-//                            .scaledToFit()
-//                            .frame(width: 30, height: 30)
-//                            .foregroundColor(.white.opacity(0.9))
-                        
-                        // App 名称
                         Text("手机温度")
                             .foregroundColor(.white.opacity(0.9))
                             .font(.system(size: 23, weight: .medium))
@@ -185,22 +169,123 @@ struct ContentView: View {
                     HStack {
                         Spacer()
                         
-                        Button(action: {}) {
-                            Image(systemName: "ellipsis")
-                                .foregroundColor(.white.opacity(0.7))
-                                .font(.system(size: 22))
-                        }
+//                        Button(action: {}) {
+//                            Image(systemName: "ellipsis")
+//                                .foregroundColor(.white.opacity(0.7))
+//                                .font(.system(size: 22))
+//                        }
                     }
                 }
                 .padding(.horizontal, 25)
-                .padding(.top, 30) // 状态栏下方适当间距
+                .padding(.top, 30)
                 .frame(maxWidth: .infinity)
                 .background(Color.clear)
                 
                 Spacer()
+                
+                // 底部内容区域
+                VStack(spacing: 16) {
+                    if currentDisplayState == .normal {
+                        // 正常状态显示文字
+                        Text("看起来一切正常😉")
+                            .foregroundColor(.white.opacity(0.8))
+                            .font(.system(size: 14, weight: .medium))
+                            .multilineTextAlignment(.center)
+                    } else {
+                        // 发热状态显示圆形按钮和提示文字
+                        VStack(spacing: 12) {
+                            Button(action: {
+                                showCoolingTips = true
+                            }) {
+//                                Circle()
+//                                    .fill(Color.white)
+//                                    .frame(width: 60, height: 60)
+//                                    .shadow(color: .white.opacity(0.3), radius: 10, x: 0, y: 0)
+//                                    .scaleEffect(glowIntensity * 0.1 + 0.95) // 微妙的呼吸效果
+                                
+                                Image(systemName: "wind")
+                                    .scaleEffect(glowIntensity * 0.1 + 0.95)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Text("轻点查看降温 Tips")
+                                .foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                    }
+                }
+                .padding(.bottom, 50) // 底部安全区域
             }
         }
         .preferredColorScheme(.dark)
+        .sheet(isPresented: $showCoolingTips) {
+            CoolingTipsSheet(thermalState: currentDisplayState)
+        }
+    }
+}
+
+// MARK: - 降温Tips Sheet
+struct CoolingTipsSheet: View {
+    let thermalState: ThermalState
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                // 顶部标题区域
+                VStack(spacing: 8) {
+                    Text("降温 Tips")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text("帮助您的设备快速降温")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 20)
+                
+                // 当前状态显示
+                HStack {
+                    Circle()
+                        .fill(thermalState.colorScheme.coreStroke[0])
+                        .frame(width: 12, height: 12)
+                    
+                    Text("当前状态：\(thermalState.rawValue)")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                
+                // Tips内容区域（暂时为空白，后续可以添加具体建议）
+                VStack(spacing: 16) {
+                    Text("降温建议将在此显示")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    
+                    // 这里可以根据不同的热状态显示不同的建议
+                    // 例如：关闭后台应用、降低屏幕亮度、移除充电器等
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding(.horizontal)
+                
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 
