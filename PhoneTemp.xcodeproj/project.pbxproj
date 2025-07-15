@@ -7,17 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5FEE725B2E262C2E00FF44CF /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FEE71E92E26271900FF44CF /* WidgetKit.framework */; };
-		5FEE725C2E262C2E00FF44CF /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FEE71EB2E26271900FF44CF /* SwiftUI.framework */; };
-		5FEE726D2E262C2F00FF44CF /* PhoneTempWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FEE725A2E262C2E00FF44CF /* PhoneTempWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5FEE72772E262E4B00FF44CF /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FEE71E92E26271900FF44CF /* WidgetKit.framework */; };
+		5FEE72782E262E4B00FF44CF /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FEE71EB2E26271900FF44CF /* SwiftUI.framework */; };
+		5FEE72892E262E4C00FF44CF /* PhoneTempWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5FEE72762E262E4B00FF44CF /* PhoneTempWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		5FEE726B2E262C2F00FF44CF /* PBXContainerItemProxy */ = {
+		5FEE72872E262E4C00FF44CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5F1E9DC02E2247B700EBB1EC /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5FEE72592E262C2E00FF44CF;
+			remoteGlobalIDString = 5FEE72752E262E4B00FF44CF;
 			remoteInfo = PhoneTempWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
@@ -29,7 +29,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				5FEE726D2E262C2F00FF44CF /* PhoneTempWidgetExtension.appex in Embed Foundation Extensions */,
+				5FEE72892E262E4C00FF44CF /* PhoneTempWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -40,7 +40,7 @@
 		5F1E9DC82E2247B700EBB1EC /* PhoneTemp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhoneTemp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FEE71E92E26271900FF44CF /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		5FEE71EB2E26271900FF44CF /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		5FEE725A2E262C2E00FF44CF /* PhoneTempWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhoneTempWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FEE72762E262E4B00FF44CF /* PhoneTempWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhoneTempWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -51,12 +51,21 @@
 			);
 			target = 5F1E9DC72E2247B700EBB1EC /* PhoneTemp */;
 		};
-		5FEE72712E262C2F00FF44CF /* Exceptions for "PhoneTempWidget" folder in "PhoneTempWidgetExtension" target */ = {
+		5FEE728D2E262E4C00FF44CF /* Exceptions for "PhoneTempWidget" folder in "PhoneTempWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 5FEE72592E262C2E00FF44CF /* PhoneTempWidgetExtension */;
+			target = 5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */;
+		};
+		5FEE728F2E262EAB00FF44CF /* Exceptions for "PhoneTemp" folder in "PhoneTempWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Models/ThermalActivityAttributes.swift,
+				Models/ThermalState.swift,
+			);
+			target = 5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -65,19 +74,15 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				5F1E9DD82E2247B800EBB1EC /* Exceptions for "PhoneTemp" folder in "PhoneTemp" target */,
+				5FEE728F2E262EAB00FF44CF /* Exceptions for "PhoneTemp" folder in "PhoneTempWidgetExtension" target */,
 			);
 			path = PhoneTemp;
 			sourceTree = "<group>";
 		};
-		5FEE720A2E262ABA00FF44CF /* PhoneTempWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = PhoneTempWidget;
-			sourceTree = "<group>";
-		};
-		5FEE725D2E262C2E00FF44CF /* PhoneTempWidget */ = {
+		5FEE72792E262E4B00FF44CF /* PhoneTempWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				5FEE72712E262C2F00FF44CF /* Exceptions for "PhoneTempWidget" folder in "PhoneTempWidgetExtension" target */,
+				5FEE728D2E262E4C00FF44CF /* Exceptions for "PhoneTempWidget" folder in "PhoneTempWidgetExtension" target */,
 			);
 			path = PhoneTempWidget;
 			sourceTree = "<group>";
@@ -92,12 +97,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5FEE72572E262C2E00FF44CF /* Frameworks */ = {
+		5FEE72732E262E4B00FF44CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5FEE725C2E262C2E00FF44CF /* SwiftUI.framework in Frameworks */,
-				5FEE725B2E262C2E00FF44CF /* WidgetKit.framework in Frameworks */,
+				5FEE72782E262E4B00FF44CF /* SwiftUI.framework in Frameworks */,
+				5FEE72772E262E4B00FF44CF /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -108,8 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				5F1E9DCA2E2247B700EBB1EC /* PhoneTemp */,
-				5FEE720A2E262ABA00FF44CF /* PhoneTempWidget */,
-				5FEE725D2E262C2E00FF44CF /* PhoneTempWidget */,
+				5FEE72792E262E4B00FF44CF /* PhoneTempWidget */,
 				5FEE71E82E26271900FF44CF /* Frameworks */,
 				5F1E9DC92E2247B700EBB1EC /* Products */,
 			);
@@ -119,7 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				5F1E9DC82E2247B700EBB1EC /* PhoneTemp.app */,
-				5FEE725A2E262C2E00FF44CF /* PhoneTempWidgetExtension.appex */,
+				5FEE72762E262E4B00FF44CF /* PhoneTempWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -148,7 +152,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				5FEE726C2E262C2F00FF44CF /* PBXTargetDependency */,
+				5FEE72882E262E4C00FF44CF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				5F1E9DCA2E2247B700EBB1EC /* PhoneTemp */,
@@ -160,26 +164,26 @@
 			productReference = 5F1E9DC82E2247B700EBB1EC /* PhoneTemp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5FEE72592E262C2E00FF44CF /* PhoneTempWidgetExtension */ = {
+		5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5FEE726E2E262C2F00FF44CF /* Build configuration list for PBXNativeTarget "PhoneTempWidgetExtension" */;
+			buildConfigurationList = 5FEE728A2E262E4C00FF44CF /* Build configuration list for PBXNativeTarget "PhoneTempWidgetExtension" */;
 			buildPhases = (
-				5FEE72562E262C2E00FF44CF /* Sources */,
-				5FEE72572E262C2E00FF44CF /* Frameworks */,
-				5FEE72582E262C2E00FF44CF /* Resources */,
+				5FEE72722E262E4B00FF44CF /* Sources */,
+				5FEE72732E262E4B00FF44CF /* Frameworks */,
+				5FEE72742E262E4B00FF44CF /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				5FEE725D2E262C2E00FF44CF /* PhoneTempWidget */,
+				5FEE72792E262E4B00FF44CF /* PhoneTempWidget */,
 			);
 			name = PhoneTempWidgetExtension;
 			packageProductDependencies = (
 			);
 			productName = PhoneTempWidgetExtension;
-			productReference = 5FEE725A2E262C2E00FF44CF /* PhoneTempWidgetExtension.appex */;
+			productReference = 5FEE72762E262E4B00FF44CF /* PhoneTempWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -195,7 +199,7 @@
 					5F1E9DC72E2247B700EBB1EC = {
 						CreatedOnToolsVersion = 16.0;
 					};
-					5FEE72592E262C2E00FF44CF = {
+					5FEE72752E262E4B00FF44CF = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -215,7 +219,7 @@
 			projectRoot = "";
 			targets = (
 				5F1E9DC72E2247B700EBB1EC /* PhoneTemp */,
-				5FEE72592E262C2E00FF44CF /* PhoneTempWidgetExtension */,
+				5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -228,7 +232,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5FEE72582E262C2E00FF44CF /* Resources */ = {
+		5FEE72742E262E4B00FF44CF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -245,7 +249,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5FEE72562E262C2E00FF44CF /* Sources */ = {
+		5FEE72722E262E4B00FF44CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,10 +259,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		5FEE726C2E262C2F00FF44CF /* PBXTargetDependency */ = {
+		5FEE72882E262E4C00FF44CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5FEE72592E262C2E00FF44CF /* PhoneTempWidgetExtension */;
-			targetProxy = 5FEE726B2E262C2F00FF44CF /* PBXContainerItemProxy */;
+			target = 5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */;
+			targetProxy = 5FEE72872E262E4C00FF44CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -446,7 +450,7 @@
 			};
 			name = Release;
 		};
-		5FEE726F2E262C2F00FF44CF /* Debug */ = {
+		5FEE728B2E262E4C00FF44CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -473,7 +477,7 @@
 			};
 			name = Debug;
 		};
-		5FEE72702E262C2F00FF44CF /* Release */ = {
+		5FEE728C2E262E4C00FF44CF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -521,11 +525,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5FEE726E2E262C2F00FF44CF /* Build configuration list for PBXNativeTarget "PhoneTempWidgetExtension" */ = {
+		5FEE728A2E262E4C00FF44CF /* Build configuration list for PBXNativeTarget "PhoneTempWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5FEE726F2E262C2F00FF44CF /* Debug */,
-				5FEE72702E262C2F00FF44CF /* Release */,
+				5FEE728B2E262E4C00FF44CF /* Debug */,
+				5FEE728C2E262E4C00FF44CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
