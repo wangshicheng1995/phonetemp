@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: - 温度回顾主视图
 struct TemperatureOverviewView: View {
-    @StateObject private var recorder = TemperatureRecorder()
+    private let recorder: TemperatureRecorder
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTimeRange: TimeRange = .day
     @State private var showingEducationSheet = false
@@ -28,6 +28,11 @@ struct TemperatureOverviewView: View {
             default: return false // 其他范围暂未实现
             }
         }
+    }
+    
+    // 初始化器
+    init(recorder: TemperatureRecorder? = nil) {
+        self.recorder = recorder ?? TemperatureRecorder.previewInstance()
     }
     
     var body: some View {
@@ -182,6 +187,18 @@ struct TemperatureOverviewView: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(8)
+            } else {
+                HStack {
+                    Text("暂无记录")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)

@@ -17,6 +17,7 @@ struct ContentView: View {
     
     // 用于开发阶段预览的自定义热状态
     private let customThermalState: ThermalState?
+    private let isPreviewMode: Bool
     
     // 所有热状态的顺序
     private let allThermalStates: [ThermalState] = [.normal, .fair, .serious, .critical]
@@ -41,11 +42,19 @@ struct ContentView: View {
     // 默认初始化器（用于正常运行）
     init() {
         self.customThermalState = nil
+        self.isPreviewMode = false
     }
     
     // 自定义初始化器（用于预览和测试）
     init(previewThermalState: ThermalState) {
         self.customThermalState = previewThermalState
+        self.isPreviewMode = true
+    }
+    
+    // Preview 专用初始化器
+    init(isPreview: Bool) {
+        self.customThermalState = nil
+        self.isPreviewMode = isPreview
     }
     
     var body: some View {
@@ -98,11 +107,13 @@ struct ContentView: View {
                     }
                     .onDisappear {
                         // 视图消失时清理资源
-                        temperatureRecorder.invalidate()
+                        if !isPreviewMode {
+                            temperatureRecorder.invalidate()
+                        }
                     }
                     .onChange(of: thermalManager.currentThermalState) { oldState, newState in
                         // 只有在非预览模式下才响应真实热状态变化
-                        guard customThermalState == nil else { return }
+                        guard customThermalState == nil && !isPreviewMode else { return }
                         
                         // 记录温度变化
                         temperatureRecorder.recordTemperatureChange(newState: newState)
@@ -123,9 +134,11 @@ struct ContentView: View {
             CoolingTipsSheet(thermalState: currentDisplayState)
         }
         .modifier(FullScreenCoverModifier(isPresented: $showTemperatureOverview) {
-            TemperatureOverviewView()
+            TemperatureOverviewView(recorder: temperatureRecorder)
         })
         .onChange(of: scenePhase) { _, newPhase in
+            guard !isPreviewMode else { return }
+            
             switch newPhase {
             case .background:
                 // 应用进入后台时处理 Live Activity
@@ -270,27 +283,6 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Preview
-#Preview("正常状态") {
-    ContentView(previewThermalState: .normal)
-}
-
-#Preview("轻微发热") {
-    ContentView(previewThermalState: .fair)
-}
-
-#Preview("中度发热") {
-    ContentView(previewThermalState: .serious)
-}
-
-#Preview("严重发热") {
-    ContentView(previewThermalState: .critical)
-}
-
-#Preview("默认运行") {
-    ContentView()
-}
-
 // MARK: - 兼容性修饰符
 struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
     @Binding var isPresented: Bool
@@ -307,28 +299,23 @@ struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
     }
 }
 
-// MARK: - Preview
+// MARK: - Preview - 使用安全的初始化方式
 #Preview("正常状态") {
     ContentView(previewThermalState: .normal)
-        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
 }
 
 #Preview("轻微发热") {
     ContentView(previewThermalState: .fair)
-        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
 }
 
 #Preview("中度发热") {
     ContentView(previewThermalState: .serious)
-        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
 }
 
 #Preview("严重发热") {
     ContentView(previewThermalState: .critical)
-        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
 }
 
 #Preview("默认运行") {
-    ContentView()
-        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
+    ContentView(isPreview: true)
 }

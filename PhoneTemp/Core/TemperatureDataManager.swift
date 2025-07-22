@@ -5,14 +5,6 @@
 //  Created by Echo Wang on 2025/7/22.
 //
 
-
-//
-//  TemperatureDataManager.swift
-//  PhoneTemp
-//
-//  Created by Echo Wang on 2025/7/22.
-//
-
 import Foundation
 import SwiftData
 
@@ -25,7 +17,20 @@ class TemperatureDataManager: ObservableObject {
     private(set) var modelContext: ModelContext?
     
     private init() {
+        // 检查是否在 Preview 环境中
+        if isPreviewEnvironment() {
+            print("TemperatureDataManager: Running in preview environment, skipping database setup")
+            return
+        }
+        
         setupModelContainer()
+    }
+    
+    // MARK: - 检查是否在 Preview 环境
+    private func isPreviewEnvironment() -> Bool {
+        // 检查是否在 SwiftUI Preview 环境中
+        return ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
+               ProcessInfo.processInfo.arguments.contains("--preview")
     }
     
     // MARK: - 设置数据容器
@@ -115,11 +120,16 @@ class TemperatureDataManager: ObservableObject {
     
     // MARK: - 检查是否可用
     func isAvailable() -> Bool {
-        return modelContext != nil
+        return modelContext != nil && !isPreviewEnvironment()
     }
     
     // MARK: - 数据库健康检查
     func performHealthCheck() {
+        guard !isPreviewEnvironment() else {
+            print("TemperatureDataManager: Skipping health check in preview environment")
+            return
+        }
+        
         guard let context = modelContext else {
             print("TemperatureDataManager: ModelContext is nil")
             return
@@ -144,7 +154,7 @@ class TemperatureDataManager: ObservableObject {
     
     // MARK: - 检查数据库完整性
     private func checkDatabaseIntegrity() {
-        guard let context = modelContext else { return }
+        guard !isPreviewEnvironment(), let context = modelContext else { return }
         
         do {
             // 获取总记录数
@@ -190,19 +200,26 @@ class TemperatureDataManager: ObservableObject {
         
         // 尝试重新初始化
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.setupModelContainer()
-            
-            // 再次检查
-            if self.isAvailable() {
-                print("TemperatureDataManager: Recovery successful")
-            } else {
-                print("TemperatureDataManager: Recovery failed - operating in degraded mode")
+            if !self.isPreviewEnvironment() {
+                self.setupModelContainer()
+                
+                // 再次检查
+                if self.isAvailable() {
+                    print("TemperatureDataManager: Recovery successful")
+                } else {
+                    print("TemperatureDataManager: Recovery failed - operating in degraded mode")
+                }
             }
         }
     }
     
     // MARK: - 强制重新初始化
     func forceReinitialize() {
+        guard !isPreviewEnvironment() else {
+            print("TemperatureDataManager: Cannot reinitialize in preview environment")
+            return
+        }
+        
         print("TemperatureDataManager: Force reinitializing...")
         
         // 清理当前状态
@@ -218,7 +235,7 @@ class TemperatureDataManager: ObservableObject {
     
     // MARK: - 获取数据库统计信息
     func getDatabaseStats() -> (totalRecords: Int, todayRecords: Int, isHealthy: Bool) {
-        guard let context = modelContext else {
+        guard !isPreviewEnvironment(), let context = modelContext else {
             return (0, 0, false)
         }
         
@@ -245,5 +262,12 @@ class TemperatureDataManager: ObservableObject {
             print("TemperatureDataManager: Failed to get database stats: \(error.localizedDescription)")
             return (0, 0, false)
         }
+    }
+    
+    // MARK: - Preview 模式支持
+    static func previewInstance() -> TemperatureDataManager {
+        let instance = TemperatureDataManager()
+        // Preview 实例不需要真实的数据库连接
+        return instance
     }
 }

@@ -39,10 +39,16 @@ final class TemperatureRecord {
         }
     }
     
+    // MARK: - 初始化器
     init(timestamp: Date = Date(), thermalState: ThermalState, deviceName: String? = nil) {
         self.timestamp = timestamp
         self.thermalStateRawValue = thermalState.rawValue  // 存储枚举的原始值
         self.deviceName = deviceName ?? UIDevice.current.name
+    }
+    
+    // MARK: - 便利初始化器（用于 Preview 和测试）
+    convenience init(thermalState: ThermalState) {
+        self.init(timestamp: Date(), thermalState: thermalState, deviceName: UIDevice.current.name)
     }
 }
 
@@ -66,6 +72,20 @@ extension TemperatureRecord {
         case .serious: return "orange"
         case .critical: return "red"
         }
+    }
+    
+    /// 格式化时间戳为可读字符串
+    var formattedTime: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: timestamp)
+    }
+    
+    /// 格式化日期为可读字符串
+    var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: timestamp)
     }
 }
 
@@ -131,5 +151,52 @@ struct TemperatureStats {
         }
         
         return maxPeriod
+    }
+}
+
+// MARK: - 便利扩展
+extension TemperatureStats {
+    /// 获取正常状态的百分比
+    var normalPercentage: Double {
+        guard totalRecords > 0 else { return 0 }
+        return Double(normalCount) / Double(totalRecords) * 100
+    }
+    
+    /// 获取发热状态的百分比
+    var heatingPercentage: Double {
+        guard totalRecords > 0 else { return 0 }
+        let heatingCount = fairCount + seriousCount + criticalCount
+        return Double(heatingCount) / Double(totalRecords) * 100
+    }
+    
+    /// 获取最常见的温度状态
+    var mostCommonState: ThermalState {
+        let states: [(ThermalState, Int)] = [
+            (ThermalState.normal, normalCount),
+            (ThermalState.fair, fairCount),
+            (ThermalState.serious, seriousCount),
+            (ThermalState.critical, criticalCount)
+        ]
+        
+        return states.max(by: { $0.1 < $1.1 })?.0 ?? ThermalState.normal
+    }
+    
+    /// 格式化平均温度值
+    var formattedAverageValue: String {
+        return String(format: "%.1f", averageValue)
+    }
+    
+    /// 格式化最长正常持续时间
+    var formattedLongestNormalPeriod: String {
+        let hours = Int(longestNormalPeriod / 3600)
+        let minutes = Int((longestNormalPeriod.truncatingRemainder(dividingBy: 3600)) / 60)
+        
+        if hours > 0 {
+            return "\(hours)小时\(minutes)分钟"
+        } else if minutes > 0 {
+            return "\(minutes)分钟"
+        } else {
+            return "少于1分钟"
+        }
     }
 }
