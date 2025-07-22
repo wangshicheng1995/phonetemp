@@ -16,7 +16,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5FEE72062E262ABA00FF44CF"
+               BlueprintIdentifier = "5FEE72752E262E4B00FF44CF"
                BuildableName = "PhoneTempWidgetExtension.appex"
                BlueprintName = "PhoneTempWidgetExtension"
                ReferencedContainer = "container:PhoneTemp.xcodeproj">

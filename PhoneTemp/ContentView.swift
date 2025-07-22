@@ -149,47 +149,47 @@ struct ContentView: View {
                     .font(.system(size: 14, weight: .medium))
                     .multilineTextAlignment(.center)
             } else if thermalState != .normal {
-                // 发热状态显示降温按钮
-                VStack(spacing: 12) {
-                    Button(action: {
-                        showCoolingTips = true
-                    }) {
-                        Image(systemName: "wind")
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Text("轻点查看降温 Tips")
-                        .foregroundColor(.white.opacity(0.7))
-                        .font(.system(size: 14, weight: .medium))
-                    
-                    // 测试 Live Activity 按钮
-                    Button(action: {
-                        Task {
-                            await thermalManager.getActivityManager()?.startActivity(with: thermalState)
-                        }
-                    }) {
-                        Text("测试灵动岛")
-                            .foregroundColor(.white.opacity(0.8))
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    // 测试控制台按钮
-                    NavigationLink(destination: LiveActivityTestView()) {
-                        Text("测试控制台")
-                            .foregroundColor(.white.opacity(0.8))
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.blue.opacity(0.2))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
+//                // 发热状态显示降温按钮
+//                VStack(spacing: 12) {
+//                    Button(action: {
+//                        showCoolingTips = true
+//                    }) {
+//                        Image(systemName: "wind")
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
+//                    
+//                    Text("轻点查看降温 Tips")
+//                        .foregroundColor(.white.opacity(0.7))
+//                        .font(.system(size: 14, weight: .medium))
+//                    
+//                    // 测试 Live Activity 按钮
+//                    Button(action: {
+//                        Task {
+//                            await thermalManager.getActivityManager()?.startActivity(with: thermalState)
+//                        }
+//                    }) {
+//                        Text("测试灵动岛")
+//                            .foregroundColor(.white.opacity(0.8))
+//                            .font(.system(size: 12, weight: .medium))
+//                            .padding(.horizontal, 12)
+//                            .padding(.vertical, 6)
+//                            .background(Color.white.opacity(0.1))
+//                            .cornerRadius(8)
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
+//                    
+//                    // 测试控制台按钮
+//                    NavigationLink(destination: LiveActivityTestView()) {
+//                        Text("测试控制台")
+//                            .foregroundColor(.white.opacity(0.8))
+//                            .font(.system(size: 12, weight: .medium))
+//                            .padding(.horizontal, 12)
+//                            .padding(.vertical, 6)
+//                            .background(Color.blue.opacity(0.2))
+//                            .cornerRadius(8)
+//                    }
+//                    .buttonStyle(PlainButtonStyle())
+//                }
             } else {
                 // 正常状态的预览模式
                 Text("这是预览模式")
