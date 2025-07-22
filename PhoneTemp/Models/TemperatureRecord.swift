@@ -54,14 +54,31 @@ final class TemperatureRecord {
 
 // MARK: - 温度记录扩展方法
 extension TemperatureRecord {
-    /// 获取温度记录对应的数值（用于图表显示）
-    var temperatureValue: Double {
+    /// 获取热度等级数值（1-10分制，用于图表显示）
+    var heatLevel: Double {
         switch thermalState {
-        case .normal: return 1.0
-        case .fair: return 2.5
-        case .serious: return 4.0
-        case .critical: return 5.5
+        case .normal: return 2.0      // 正常状态 = 2/10级
+        case .fair: return 4.0        // 轻微发热 = 4/10级
+        case .serious: return 7.0     // 中度发热 = 7/10级
+        case .critical: return 9.0    // 严重发热 = 9/10级
         }
+    }
+    
+    /// 获取热度等级描述
+    var heatLevelDescription: String {
+        let level = Int(heatLevel)
+        return "\(level)/10级"
+    }
+    
+    /// 获取热度等级简短描述
+    var heatLevelShort: String {
+        return "\(Int(heatLevel))级"
+    }
+    
+    /// 兼容性属性：保持与原有代码的兼容
+    @available(*, deprecated, message: "请使用 heatLevel 替代")
+    var temperatureValue: Double {
+        return heatLevel
     }
     
     /// 获取温度记录对应的颜色
@@ -96,7 +113,7 @@ struct TemperatureStats {
     let fairCount: Int
     let seriousCount: Int
     let criticalCount: Int
-    let averageValue: Double
+    let averageHeatLevel: Double  // 改名：平均热度等级
     let peakState: ThermalState
     let longestNormalPeriod: TimeInterval
     
@@ -107,8 +124,8 @@ struct TemperatureStats {
         self.seriousCount = records.filter { $0.thermalState == .serious }.count
         self.criticalCount = records.filter { $0.thermalState == .critical }.count
         
-        let totalValue = records.reduce(0.0) { $0 + $1.temperatureValue }
-        self.averageValue = totalRecords > 0 ? totalValue / Double(totalRecords) : 0.0
+        let totalHeatLevel = records.reduce(0.0) { $0 + $1.heatLevel }
+        self.averageHeatLevel = totalRecords > 0 ? totalHeatLevel / Double(totalRecords) : 0.0
         
         // 找出峰值状态
         if criticalCount > 0 {
@@ -156,6 +173,12 @@ struct TemperatureStats {
 
 // MARK: - 便利扩展
 extension TemperatureStats {
+    /// 兼容性属性：保持与原有代码的兼容
+    @available(*, deprecated, message: "请使用 averageHeatLevel 替代")
+    var averageValue: Double {
+        return averageHeatLevel
+    }
+    
     /// 获取正常状态的百分比
     var normalPercentage: Double {
         guard totalRecords > 0 else { return 0 }
@@ -181,9 +204,20 @@ extension TemperatureStats {
         return states.max(by: { $0.1 < $1.1 })?.0 ?? ThermalState.normal
     }
     
-    /// 格式化平均温度值
+    /// 格式化平均热度等级
+    var formattedAverageHeatLevel: String {
+        return String(format: "%.1f/10级", averageHeatLevel)
+    }
+    
+    /// 格式化平均热度等级（简短版本）
+    var formattedAverageHeatLevelShort: String {
+        return String(format: "%.1f级", averageHeatLevel)
+    }
+    
+    /// 兼容性属性：格式化平均温度值
+    @available(*, deprecated, message: "请使用 formattedAverageHeatLevel 替代")
     var formattedAverageValue: String {
-        return String(format: "%.1f", averageValue)
+        return formattedAverageHeatLevelShort
     }
     
     /// 格式化最长正常持续时间

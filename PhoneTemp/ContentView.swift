@@ -179,7 +179,7 @@ struct ContentView: View {
                 // App 名称
                 Text("手机温度")
                     .foregroundColor(.white.opacity(0.9))
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.title2)
             }
         }
         .padding(.horizontal, 25)

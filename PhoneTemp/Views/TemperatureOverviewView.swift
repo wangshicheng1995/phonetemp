@@ -36,12 +36,12 @@ struct TemperatureOverviewView: View {
     }
     
     var body: some View {
-        NavigationView {
+        VStack(spacing: 0) {
+            // 顶部导航区域
+            topNavigationArea
+            
             ScrollView {
                 VStack(spacing: 0) {
-                    // 顶部导航区域
-                    topNavigationArea
-                    
                     // 时间范围选择器
                     timeRangeSelector
                     
@@ -59,8 +59,8 @@ struct TemperatureOverviewView: View {
                 }
             }
             .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
         }
+        .background(Color(.systemGroupedBackground))
         .onAppear {
             recorder.loadTodayRecords()
         }
@@ -71,59 +71,62 @@ struct TemperatureOverviewView: View {
     
     // MARK: - 顶部导航区域
     private var topNavigationArea: some View {
-        HStack {
-            Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
-            }
-            
-            Spacer()
-            
+        ZStack {
+            // 标题居中显示
             Text("设备温度")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
             
-            Spacer()
-            
-            Button(action: { showingEducationSheet = true }) {
-                Text("添加数据")
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
+            // 左右按钮
+            HStack {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                }
+                
+                Spacer()
+                
+                Button(action: { showingEducationSheet = true }) {
+                    Text("添加数据")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                }
             }
         }
         .padding(.horizontal, 20)
-        .padding(.top, 50)
         .padding(.bottom, 20)
         .background(Color(.systemBackground))
     }
     
     // MARK: - 时间范围选择器
     private var timeRangeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(TimeRange.allCases, id: \.self) { range in
-                Button(action: {
-                    if range.isAvailable {
-                        selectedTimeRange = range
-                    }
-                }) {
+        VStack(spacing: 0) {
+            // 使用原生分段控件，完全模仿健康应用的样式
+            Picker("时间范围", selection: $selectedTimeRange) {
+                ForEach(TimeRange.allCases, id: \.self) { range in
                     Text(range.rawValue)
-                        .font(.subheadline)
-                        .fontWeight(selectedTimeRange == range ? .semibold : .regular)
-                        .foregroundColor(
-                            selectedTimeRange == range ? .primary :
-                            (range.isAvailable ? .secondary : Color(.tertiaryLabel))
-                        )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .tag(range)
                 }
-                .disabled(!range.isAvailable)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .onChange(of: selectedTimeRange) { oldValue, newValue in
+                // 如果选择了不可用的选项，自动切换回日选项
+                if !newValue.isAvailable {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        selectedTimeRange = .day
+                        
+                        // 可以添加触觉反馈提示用户
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                    }
+                }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
         .background(Color(.systemBackground))
         .overlay(
             Rectangle()
@@ -136,13 +139,13 @@ struct TemperatureOverviewView: View {
     // MARK: - 主要数据区域
     private var mainDataSection: some View {
         VStack(spacing: 20) {
-            // 范围和当量显示
+            // 范围和温度等级显示
             HStack(alignment: .bottom, spacing: 8) {
-                Text(temperatureRangeText)
+                Text(heatLevelRangeText)
                     .font(.system(size: 36, weight: .light))
                     .foregroundColor(.primary)
                 
-                Text("温度当量")
+                Text("级温度")
                     .font(.title3)
                     .fontWeight(.regular)
                     .foregroundColor(.secondary)
@@ -178,12 +181,12 @@ struct TemperatureOverviewView: View {
                             .fill(colorForState(latestRecord.thermalState))
                             .frame(width: 8, height: 8)
                         
-                        Text(String(format: "%.1f", latestRecord.temperatureValue))
+                        Text(latestRecord.heatLevelDescription)
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(.primary)
                         
-                        Text("温度当量")
+                        Text("温度")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -247,8 +250,8 @@ struct TemperatureOverviewView: View {
                 
                 StatCard(
                     title: "平均温度",
-                    value: String(format: "%.1f", recorder.todayStats.averageValue),
-                    subtitle: "温度当量",
+                    value: recorder.todayStats.formattedAverageHeatLevelShort,
+                    subtitle: "温度等级",
                     color: .green
                 )
                 
@@ -285,7 +288,7 @@ struct TemperatureOverviewView: View {
                 Spacer()
             }
             
-            Text("设备温度是你设备完成一项任务所用的能量估算，不包括气温、海拔或心率等其他因素。这让设备温度成为测量锻炼和其他日常活动总体耗能和强度等级的良好指标。其计量单位为 MET，即代谢当量。")
+            Text("设备温度监测帮助你了解手机的运行状态和发热程度。我们使用1-10级温度等级来直观显示设备的温度状态，让你更好地保护设备。")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .lineSpacing(4)
@@ -295,19 +298,19 @@ struct TemperatureOverviewView: View {
                 EducationRow(
                     icon: "cpu",
                     title: "什么会让设备快速升温？",
-                    description: "高性能应用（游戏、视频录制）、充电、阳光直射、后台应用过多、系统更新等都会快速提升设备温度。"
+                    description: "高性能应用（游戏、视频录制）、充电、阳光直射、后台应用过多、系统更新等都会快速提升设备温度等级。"
                 )
                 
                 EducationRow(
                     icon: "snowflake",
                     title: "如何给设备降温？",
-                    description: "关闭高耗能应用、降低屏幕亮度、停止充电、放置在通风处、启用低电量模式、避免阳光直射等方法都能有效降温。"
+                    description: "关闭高耗能应用、降低屏幕亮度、停止充电、放置在通风处、启用低电量模式等方法都能有效降低温度等级。"
                 )
                 
                 EducationRow(
                     icon: "exclamationmark.triangle",
-                    title: "高温对设备的影响",
-                    description: "长期高温会影响电池寿命、降低处理器性能、可能导致意外关机，严重时还可能造成硬件损坏。"
+                    title: "高温度对设备的影响",
+                    description: "长期高温度会影响电池寿命、降低处理器性能、可能导致意外关机，严重时还可能造成硬件损坏。"
                 )
                 
                 EducationRow(
@@ -326,16 +329,16 @@ struct TemperatureOverviewView: View {
     
     // MARK: - 辅助方法
     
-    private var temperatureRangeText: String {
+    private var heatLevelRangeText: String {
         let stats = recorder.todayStats
         if stats.totalRecords == 0 {
-            return "0.0-0.0"
+            return "0-0"
         }
         
-        let minValue = recorder.todayRecords.map(\.temperatureValue).min() ?? 0.0
-        let maxValue = recorder.todayRecords.map(\.temperatureValue).max() ?? 0.0
+        let minValue = recorder.todayRecords.map(\.heatLevel).min() ?? 0.0
+        let maxValue = recorder.todayRecords.map(\.heatLevel).max() ?? 0.0
         
-        return String(format: "%.1f-%.1f", minValue, maxValue)
+        return "\(Int(minValue))-\(Int(maxValue))"
     }
     
     private func formatTime(_ date: Date) -> String {
@@ -453,8 +456,32 @@ struct TemperatureEducationSheet: View {
                     // 详细教育内容
                     VStack(alignment: .leading, spacing: 16) {
                         EducationSection(
-                            title: "设备为什么会发热？",
+                            title: "什么是温度等级？",
                             icon: "thermometer.sun",
+                            content: """
+                            温度等级是我们自定义的1-10级评分系统，用于直观显示设备的发热程度：
+                            
+                            🟢 1-3级：正常温度
+                            • 设备运行流畅，温度在正常范围内
+                            • 可以放心使用各种应用功能
+                            
+                            🟡 4-6级：轻微发热  
+                            • 设备开始升温，但仍在安全范围
+                            • 建议适当减少高耗能操作
+                            
+                            🟠 7-8级：明显发热
+                            • 系统开始限制性能以保护硬件
+                            • 需要立即采取降温措施
+                            
+                            🔴 9-10级：严重发热
+                            • 可能触发自动关机保护机制
+                            • 必须停止使用并等待设备冷却
+                            """
+                        )
+                        
+                        EducationSection(
+                            title: "设备为什么会发热？",
+                            icon: "cpu",
                             content: """
                             设备发热是正常现象，主要原因包括：
                             • 处理器高负载运行（游戏、视频处理）
@@ -467,10 +494,10 @@ struct TemperatureEducationSheet: View {
                         )
                         
                         EducationSection(
-                            title: "高温的危害",
+                            title: "高温度的危害",
                             icon: "exclamationmark.triangle.fill",
                             content: """
-                            长期高温会对设备造成以下影响：
+                            长期高温度会对设备造成以下影响：
                             • 电池容量永久性下降
                             • 处理器自动降频保护
                             • 系统卡顿和应用崩溃
@@ -484,7 +511,7 @@ struct TemperatureEducationSheet: View {
                             title: "有效降温方法",
                             icon: "wind.snow",
                             content: """
-                            当设备过热时，你可以：
+                            当设备温度等级过高时，你可以：
                             • 立即关闭高耗能应用和游戏
                             • 降低屏幕亮度到最低
                             • 停止充电并拔掉充电器

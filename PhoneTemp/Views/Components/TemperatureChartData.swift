@@ -12,7 +12,7 @@ import Charts
 struct TemperatureChartData: Identifiable {
     let id = UUID()
     let time: Date
-    let value: Double
+    let value: Double  // 热度等级数值
     let state: ThermalState
     
     var hourString: String {
@@ -35,6 +35,11 @@ struct TemperatureChartData: Identifiable {
         case .critical: return .red
         }
     }
+    
+    /// 获取热度等级描述
+    var heatLevelDescription: String {
+        return "\(Int(value))/10级"
+    }
 }
 
 // MARK: - 温度图表视图
@@ -46,16 +51,16 @@ struct TemperatureChartView: View {
         records.map { record in
             TemperatureChartData(
                 time: record.timestamp,
-                value: record.temperatureValue,
+                value: record.heatLevel,  // 使用新的热度等级
                 state: record.thermalState
             )
         }
     }
     
     private var valueRange: ClosedRange<Double> {
-        guard !chartData.isEmpty else { return 0...6 }
+        guard !chartData.isEmpty else { return 0...10 }
         let minValue = chartData.map(\.value).min() ?? 0
-        let maxValue = chartData.map(\.value).max() ?? 6
+        let maxValue = chartData.map(\.value).max() ?? 10
         return (minValue - 0.5)...(maxValue + 0.5)
     }
     
@@ -80,11 +85,11 @@ struct TemperatureChartView: View {
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
             
-            Text("暂无温度数据")
+            Text("暂无热度数据")
                 .font(.headline)
                 .foregroundColor(.secondary)
             
-            Text("开始使用应用后，温度变化将显示在这里")
+            Text("开始使用应用后，设备热度变化将显示在这里")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -107,7 +112,7 @@ struct TemperatureChartView: View {
                 // 线图
                 LineMark(
                     x: .value("时间", dataPoint.time),
-                    y: .value("温度", dataPoint.value)
+                    y: .value("热度等级", dataPoint.value)
                 )
                 .foregroundStyle(dataPoint.color)
                 .lineStyle(StrokeStyle(lineWidth: 2))
@@ -115,7 +120,7 @@ struct TemperatureChartView: View {
                 // 数据点
                 PointMark(
                     x: .value("时间", dataPoint.time),
-                    y: .value("温度", dataPoint.value)
+                    y: .value("热度等级", dataPoint.value)
                 )
                 .foregroundStyle(dataPoint.color)
                 .symbolSize(40)
@@ -142,12 +147,12 @@ struct TemperatureChartView: View {
                 }
             }
             .chartYAxis {
-                AxisMarks(values: [1.0, 2.5, 4.0, 5.5]) { value in
+                AxisMarks(values: [2.0, 4.0, 7.0, 9.0]) { value in
                     AxisGridLine()
                     AxisTick()
                     AxisValueLabel {
                         if let doubleValue = value.as(Double.self) {
-                            Text(temperatureLabelForValue(doubleValue))
+                            Text(heatLevelLabelForValue(doubleValue))
                                 .font(.caption)
                         }
                     }
@@ -182,7 +187,7 @@ struct TemperatureChartView: View {
                             .font(.system(size: 40))
                             .foregroundColor(.secondary)
                         
-                        Text("简化温度记录")
+                        Text("简化热度记录")
                             .font(.headline)
                             .foregroundColor(.secondary)
                         
@@ -203,7 +208,7 @@ struct TemperatureChartView: View {
                 .fill(point.color)
                 .frame(width: 12, height: 12)
             
-            Text("\(point.timeString) - \(point.state.rawValue)")
+            Text("\(point.timeString) - \(point.state.rawValue) (\(point.heatLevelDescription))")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
@@ -248,14 +253,14 @@ struct TemperatureChartView: View {
         chartData.min { abs($0.time.timeIntervalSince(date)) < abs($1.time.timeIntervalSince(date)) }
     }
     
-    // MARK: - 温度标签
-    private func temperatureLabelForValue(_ value: Double) -> String {
+    // MARK: - 热度等级标签
+    private func heatLevelLabelForValue(_ value: Double) -> String {
         switch value {
-        case 1.0: return "正常"
-        case 2.5: return "轻微"
-        case 4.0: return "中度"
-        case 5.5: return "严重"
-        default: return ""
+        case 2.0: return "2级"
+        case 4.0: return "4级"
+        case 7.0: return "7级"
+        case 9.0: return "9级"
+        default: return "\(Int(value))级"
         }
     }
 }
