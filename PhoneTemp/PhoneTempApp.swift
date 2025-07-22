@@ -13,6 +13,7 @@ struct PhoneTempApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
+            TemperatureRecord.self  // 添加 TemperatureRecord 到 Schema
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

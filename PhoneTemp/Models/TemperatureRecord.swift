@@ -1,0 +1,135 @@
+//
+//  TemperatureRecord.swift
+//  PhoneTemp
+//
+//  Created by Echo Wang on 2025/7/22.
+//
+
+import Foundation
+import SwiftData
+import UIKit
+
+// MARK: - 温度记录数据模型
+@Model
+final class TemperatureRecord {
+    var timestamp: Date
+    private var thermalStateRawValue: String  // 使用字符串存储枚举的原始值
+    var deviceName: String
+    
+    // 计算属性，用于获取和设置 ThermalState
+    var thermalState: ThermalState {
+        get {
+            // 将存储的字符串转换回枚举
+            switch thermalStateRawValue {
+            case "正常":
+                return .normal
+            case "轻微发热":
+                return .fair
+            case "中度发热":
+                return .serious
+            case "严重发热":
+                return .critical
+            default:
+                return .normal  // 默认值
+            }
+        }
+        set {
+            // 将枚举转换为字符串存储
+            thermalStateRawValue = newValue.rawValue
+        }
+    }
+    
+    init(timestamp: Date = Date(), thermalState: ThermalState, deviceName: String? = nil) {
+        self.timestamp = timestamp
+        self.thermalStateRawValue = thermalState.rawValue  // 存储枚举的原始值
+        self.deviceName = deviceName ?? UIDevice.current.name
+    }
+}
+
+// MARK: - 温度记录扩展方法
+extension TemperatureRecord {
+    /// 获取温度记录对应的数值（用于图表显示）
+    var temperatureValue: Double {
+        switch thermalState {
+        case .normal: return 1.0
+        case .fair: return 2.5
+        case .serious: return 4.0
+        case .critical: return 5.5
+        }
+    }
+    
+    /// 获取温度记录对应的颜色
+    var color: String {
+        switch thermalState {
+        case .normal: return "green"
+        case .fair: return "yellow"
+        case .serious: return "orange"
+        case .critical: return "red"
+        }
+    }
+}
+
+// MARK: - 温度统计数据模型
+struct TemperatureStats {
+    let totalRecords: Int
+    let normalCount: Int
+    let fairCount: Int
+    let seriousCount: Int
+    let criticalCount: Int
+    let averageValue: Double
+    let peakState: ThermalState
+    let longestNormalPeriod: TimeInterval
+    
+    init(records: [TemperatureRecord]) {
+        self.totalRecords = records.count
+        self.normalCount = records.filter { $0.thermalState == .normal }.count
+        self.fairCount = records.filter { $0.thermalState == .fair }.count
+        self.seriousCount = records.filter { $0.thermalState == .serious }.count
+        self.criticalCount = records.filter { $0.thermalState == .critical }.count
+        
+        let totalValue = records.reduce(0.0) { $0 + $1.temperatureValue }
+        self.averageValue = totalRecords > 0 ? totalValue / Double(totalRecords) : 0.0
+        
+        // 找出峰值状态
+        if criticalCount > 0 {
+            self.peakState = .critical
+        } else if seriousCount > 0 {
+            self.peakState = .serious
+        } else if fairCount > 0 {
+            self.peakState = .fair
+        } else {
+            self.peakState = .normal
+        }
+        
+        // 计算最长正常温度持续时间（简化版本）
+        self.longestNormalPeriod = Self.calculateLongestNormalPeriod(records)
+    }
+    
+    private static func calculateLongestNormalPeriod(_ records: [TemperatureRecord]) -> TimeInterval {
+        let sortedRecords = records.sorted { $0.timestamp < $1.timestamp }
+        var maxPeriod: TimeInterval = 0
+        var currentPeriodStart: Date?
+        
+        for record in sortedRecords {
+            if record.thermalState == .normal {
+                if currentPeriodStart == nil {
+                    currentPeriodStart = record.timestamp
+                }
+            } else {
+                if let start = currentPeriodStart {
+                    let period = record.timestamp.timeIntervalSince(start)
+                    maxPeriod = max(maxPeriod, period)
+                    currentPeriodStart = nil
+                }
+            }
+        }
+        
+        // 检查最后一个正常期间
+        if let start = currentPeriodStart {
+            let period = Date().timeIntervalSince(start)
+            maxPeriod = max(maxPeriod, period)
+        }
+        
+        return maxPeriod
+    }
+}

@@ -9,8 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var thermalManager = ThermalStateManager()
+    @StateObject private var temperatureRecorder = TemperatureRecorder()
     @State private var currentPageIndex = 0
     @State private var showCoolingTips = false
+    @State private var showTemperatureOverview = false
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
@@ -27,6 +29,7 @@ struct ContentView: View {
     
     // 获取当前显示的热状态
     private var currentDisplayState: ThermalState {
+        guard currentPageIndex < allThermalStates.count else { return .normal }
         return allThermalStates[currentPageIndex]
     }
     
@@ -52,44 +55,63 @@ struct ContentView: View {
                 Color(red: 0.05, green: 0.08, blue: 0.08)
                     .ignoresSafeArea(.all)
             
-            VStack(spacing: 0) {
-                // 固定的顶部工具栏
-                topToolbar
-                
-                // 可滑动的主要内容区域
-                TabView(selection: $currentPageIndex) {
-                    ForEach(0..<allThermalStates.count, id: \.self) { index in
-                        ZStack {
-                            // 热状态显示
-                            ThermalDisplayView(
-                                thermalState: allThermalStates[index],
-                                isCurrentState: index == realThermalStateIndex
-                            )
-                            .padding(.top, -60)
-                            .padding(.leading, 15)
-                            
-                            // 底部内容区域
-                            VStack {
-                                Spacer()
-                                bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
-                            }
-                        }
-                        .tag(index)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .onAppear {
-                    // 启动时跳转到真实热状态页面
-                    currentPageIndex = realThermalStateIndex
-                }
-                .onChange(of: thermalManager.currentThermalState) { _, _ in
-                    // 只有在非预览模式下才响应真实热状态变化
-                    guard customThermalState == nil else { return }
+                VStack(spacing: 0) {
+                    // 固定的顶部工具栏
+                    topToolbar
                     
-                    // 当真实热状态改变时，如果当前显示的是之前的真实状态，则跳转到新的真实状态
-                    if isCurrentRealState {
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            currentPageIndex = realThermalStateIndex
+                    // 可滑动的主要内容区域
+                    TabView(selection: $currentPageIndex) {
+                        ForEach(0..<allThermalStates.count, id: \.self) { index in
+                            ZStack {
+                                // 热状态显示
+                                ThermalDisplayView(
+                                    thermalState: allThermalStates[index],
+                                    isCurrentState: index == realThermalStateIndex
+                                )
+                                .padding(.top, -60)
+                                .padding(.leading, 15)
+                                
+                                // 底部内容区域
+                                VStack {
+                                    Spacer()
+                                    bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
+                                }
+                                
+                                // 回顾按钮 - 固定在右下角
+                                VStack {
+                                    Spacer()
+                                    HStack {
+                                        Spacer()
+                                        overviewButton
+                                    }
+                                }
+                                .padding(.bottom, 140)
+                                .padding(.trailing, 30)
+                            }
+                            .tag(index)
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    .onAppear {
+                        // 启动时跳转到真实热状态页面
+                        currentPageIndex = realThermalStateIndex
+                    }
+                    .onDisappear {
+                        // 视图消失时清理资源
+                        temperatureRecorder.invalidate()
+                    }
+                    .onChange(of: thermalManager.currentThermalState) { oldState, newState in
+                        // 只有在非预览模式下才响应真实热状态变化
+                        guard customThermalState == nil else { return }
+                        
+                        // 记录温度变化
+                        temperatureRecorder.recordTemperatureChange(newState: newState)
+                        
+                        // 当真实热状态改变时，如果当前显示的是之前的真实状态，则跳转到新的真实状态
+                        if isCurrentRealState {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                currentPageIndex = realThermalStateIndex
+                            }
                         }
                     }
                 }
@@ -100,6 +122,9 @@ struct ContentView: View {
         .sheet(isPresented: $showCoolingTips) {
             CoolingTipsSheet(thermalState: currentDisplayState)
         }
+        .modifier(FullScreenCoverModifier(isPresented: $showTemperatureOverview) {
+            TemperatureOverviewView()
+        })
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .background:
@@ -108,6 +133,8 @@ struct ContentView: View {
             case .active:
                 // 应用变为活跃状态时处理 Live Activity
                 print("App becoming active")
+                // 刷新温度记录
+                temperatureRecorder.refresh()
             case .inactive:
                 break
             @unknown default:
@@ -121,7 +148,6 @@ struct ContentView: View {
                 // 这里可以添加特定的处理逻辑，比如导航到特定页面
                 print("Opened from Live Activity")
             }
-        }
         }
     }
     
@@ -147,6 +173,42 @@ struct ContentView: View {
         .padding(.top, 40)
         .frame(maxWidth: .infinity)
         .background(Color.clear)
+    }
+    
+    // MARK: - 回顾按钮
+    private var overviewButton: some View {
+        Button(action: {
+            triggerHapticFeedback()
+            showTemperatureOverview = true
+        }) {
+            ZStack {
+                // 背景圆圈 - 降级处理材质效果
+                Circle()
+                    .fill(backgroundMaterial)
+                    .frame(width: 60, height: 60)
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                    )
+                
+                // 图表图标
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(1.0)
+        .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+    }
+    
+    // 背景材质的降级处理
+    private var backgroundMaterial: some ShapeStyle {
+        if #available(iOS 15.0, *) {
+            return AnyShapeStyle(.ultraThinMaterial)
+        } else {
+            return AnyShapeStyle(Color.black.opacity(0.3))
+        }
     }
     
     // MARK: - 震动反馈方法
@@ -227,4 +289,46 @@ struct ContentView: View {
 
 #Preview("默认运行") {
     ContentView()
+}
+
+// MARK: - 兼容性修饰符
+struct FullScreenCoverModifier<CoverContent: View>: ViewModifier {
+    @Binding var isPresented: Bool
+    let content: () -> CoverContent
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 14.0, *) {
+            content
+                .fullScreenCover(isPresented: $isPresented, content: self.content)
+        } else {
+            content
+                .sheet(isPresented: $isPresented, content: self.content)
+        }
+    }
+}
+
+// MARK: - Preview
+#Preview("正常状态") {
+    ContentView(previewThermalState: .normal)
+        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
+}
+
+#Preview("轻微发热") {
+    ContentView(previewThermalState: .fair)
+        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
+}
+
+#Preview("中度发热") {
+    ContentView(previewThermalState: .serious)
+        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
+}
+
+#Preview("严重发热") {
+    ContentView(previewThermalState: .critical)
+        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
+}
+
+#Preview("默认运行") {
+    ContentView()
+        .modelContainer(for: [Item.self, TemperatureRecord.self], inMemory: true)
 }

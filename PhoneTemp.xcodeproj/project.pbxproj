@@ -62,6 +62,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
+				Core/TemperatureRecorder.swift,
+				Models/TemperatureRecord.swift,
 				Models/ThermalActivityAttributes.swift,
 				Models/ThermalState.swift,
 			);
