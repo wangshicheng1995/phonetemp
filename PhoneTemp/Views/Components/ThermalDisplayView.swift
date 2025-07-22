@@ -132,7 +132,7 @@ struct ThermalDisplayView: View {
                     .font(.system(size: 28, weight: .bold))
                     .shadow(color: colorScheme.coreStroke[0], radius: 10)
                 
-                Text(isCurrentState ? "当前状态" : "预览模式")
+                Text(isCurrentState ? "当前状态" : "预览状态")
                     .foregroundColor(.white.opacity(0.7))
                     .font(.system(size: 16, weight: .medium))
                 

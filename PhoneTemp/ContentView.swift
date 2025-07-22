@@ -145,9 +145,26 @@ struct ContentView: View {
         }
         .padding(.horizontal, 25)
         .padding(.top, 40)
-//        .padding(.leading, -18)
         .frame(maxWidth: .infinity)
         .background(Color.clear)
+    }
+    
+    // MARK: - 震动反馈方法
+    private func triggerHapticFeedback() {
+        // 统一使用轻微震动
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+    }
+    
+    // MARK: - 降温提示触发方法
+    private func showCoolingTipsWithFeedback() {
+        // 先触发震动反馈
+        triggerHapticFeedback()
+        
+        // 稍微延迟显示界面，让震动效果更明显
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            showCoolingTips = true
+        }
     }
     
     // MARK: - 底部内容
@@ -161,25 +178,28 @@ struct ContentView: View {
                         .font(.system(size: 14, weight: .medium))
                         .multilineTextAlignment(.center)
                         .padding(.leading, 15)
-                } else {
-                    Text("这是正常状态预览")
-                        .foregroundColor(.white.opacity(0.6))
-                        .font(.system(size: 14, weight: .medium))
-                        .multilineTextAlignment(.center)
                 }
             } else if thermalState != .normal {
-                // 发热状态显示降温按钮
+                // 发热状态显示降温按钮 - 添加震动反馈
                 VStack(spacing: 12) {
                     Button(action: {
-                        showCoolingTips = true
+                        showCoolingTipsWithFeedback()
                     }) {
                         Image(systemName: "wind")
+                            .font(.title)
+                            .foregroundColor(.white.opacity(0.9))
                     }
                     .buttonStyle(PlainButtonStyle())
-
-                    Text("轻点查看降温 Tips")
-                        .foregroundColor(.white.opacity(0.7))
-                        .font(.system(size: 14, weight: .medium))
+                    
+                    // 可点击的文本 - 同样添加震动反馈
+                    Button(action: {
+                        showCoolingTipsWithFeedback()
+                    }) {
+                        Text("轻点查看降温 Tips")
+                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.leading, 15)
             }
