@@ -65,6 +65,8 @@ struct ContentView: View {
                                 thermalState: allThermalStates[index],
                                 isCurrentState: index == realThermalStateIndex
                             )
+                            .padding(.top, -60)
+                            .padding(.leading, 15)
                             
                             // 底部内容区域
                             VStack {
@@ -126,15 +128,24 @@ struct ContentView: View {
     // MARK: - 顶部工具栏
     private var topToolbar: some View {
         ZStack {
-            // App 名称
+            // App 名称和图标
             HStack(spacing: 8) {
+                // App 图标
+                Image("temp_icon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.white.opacity(0.9))
+                
+                // App 名称
                 Text("手机温度")
                     .foregroundColor(.white.opacity(0.9))
-                    .font(.system(size: 23, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
             }
         }
         .padding(.horizontal, 25)
-        .padding(.top, 35)
+        .padding(.top, 40)
+//        .padding(.leading, -18)
         .frame(maxWidth: .infinity)
         .background(Color.clear)
     }
@@ -142,60 +153,35 @@ struct ContentView: View {
     // MARK: - 底部内容
     private func bottomContent(for thermalState: ThermalState, isRealState: Bool) -> some View {
         VStack(spacing: 16) {
-            if thermalState == .normal && isRealState {
-                // 正常状态且为真实状态时显示文字
-                Text("看起来一切正常😉")
-                    .foregroundColor(.white.opacity(0.8))
-                    .font(.system(size: 14, weight: .medium))
-                    .multilineTextAlignment(.center)
+            if thermalState == .normal {
+                // 正常状态时显示文字
+                if isRealState {
+                    Text("看起来一切正常😉")
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 14, weight: .medium))
+                        .multilineTextAlignment(.center)
+                        .padding(.leading, 15)
+                } else {
+                    Text("这是正常状态预览")
+                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 14, weight: .medium))
+                        .multilineTextAlignment(.center)
+                }
             } else if thermalState != .normal {
-//                // 发热状态显示降温按钮
-//                VStack(spacing: 12) {
-//                    Button(action: {
-//                        showCoolingTips = true
-//                    }) {
-//                        Image(systemName: "wind")
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
-//                    
-//                    Text("轻点查看降温 Tips")
-//                        .foregroundColor(.white.opacity(0.7))
-//                        .font(.system(size: 14, weight: .medium))
-//                    
-//                    // 测试 Live Activity 按钮
-//                    Button(action: {
-//                        Task {
-//                            await thermalManager.getActivityManager()?.startActivity(with: thermalState)
-//                        }
-//                    }) {
-//                        Text("测试灵动岛")
-//                            .foregroundColor(.white.opacity(0.8))
-//                            .font(.system(size: 12, weight: .medium))
-//                            .padding(.horizontal, 12)
-//                            .padding(.vertical, 6)
-//                            .background(Color.white.opacity(0.1))
-//                            .cornerRadius(8)
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
-//                    
-//                    // 测试控制台按钮
-//                    NavigationLink(destination: LiveActivityTestView()) {
-//                        Text("测试控制台")
-//                            .foregroundColor(.white.opacity(0.8))
-//                            .font(.system(size: 12, weight: .medium))
-//                            .padding(.horizontal, 12)
-//                            .padding(.vertical, 6)
-//                            .background(Color.blue.opacity(0.2))
-//                            .cornerRadius(8)
-//                    }
-//                    .buttonStyle(PlainButtonStyle())
-//                }
-            } else {
-                // 正常状态的预览模式
-                Text("这是预览模式")
-                    .foregroundColor(.white.opacity(0.6))
-                    .font(.system(size: 14, weight: .medium))
-                    .multilineTextAlignment(.center)
+                // 发热状态显示降温按钮
+                VStack(spacing: 12) {
+                    Button(action: {
+                        showCoolingTips = true
+                    }) {
+                        Image(systemName: "wind")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Text("轻点查看降温 Tips")
+                        .foregroundColor(.white.opacity(0.7))
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .padding(.leading, 15)
             }
         }
         .padding(.bottom, 50)

@@ -26,15 +26,15 @@ struct ThermalDisplayView: View {
             let colorScheme = thermalState.colorScheme
             
             // 辅助线
-            Rectangle()
-                .fill(Color.red)
-                .frame(width: 2, height: UIScreen.main.bounds.height)
-                .opacity(0.5)
-            
-            Rectangle()
-                .fill(Color.blue)
-                .frame(width: UIScreen.main.bounds.width, height: 2)
-                .opacity(0.5)
+//            Rectangle()
+//                .fill(Color.red)
+//                .frame(width: 2, height: UIScreen.main.bounds.height)
+//                .opacity(0.5)
+//            
+//            Rectangle()
+//                .fill(Color.blue)
+//                .frame(width: UIScreen.main.bounds.width, height: 2)
+//                .opacity(0.5)
 
             
             // 最外层模糊光晕
@@ -78,7 +78,7 @@ struct ThermalDisplayView: View {
                     ),
                     lineWidth: 20
                 )
-                .frame(width: 240, height: 440)
+                .frame(width: 200, height: 440)
                 .blur(radius: 15)
                 .opacity(glowIntensity * 1.2)
             
