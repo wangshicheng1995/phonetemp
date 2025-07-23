@@ -12,7 +12,7 @@ import Charts
 struct TemperatureChartData: Identifiable {
     let id = UUID()
     let time: Date
-    let value: Double  // 热度等级数值
+    let value: Double  // 内部数值，仅用于图表绘制
     let state: ThermalState
     
     var hourString: String {
@@ -36,9 +36,9 @@ struct TemperatureChartData: Identifiable {
         }
     }
     
-    /// 获取热度等级描述
-    var heatLevelDescription: String {
-        return "\(Int(value))/10级"
+    /// 获取状态描述
+    var stateDescription: String {
+        return state.rawValue
     }
 }
 
@@ -51,7 +51,7 @@ struct TemperatureChartView: View {
         records.map { record in
             TemperatureChartData(
                 time: record.timestamp,
-                value: record.heatLevel,  // 使用新的热度等级
+                value: record.internalValue,  // 使用内部数值进行图表绘制
                 state: record.thermalState
             )
         }
@@ -85,11 +85,11 @@ struct TemperatureChartView: View {
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
             
-            Text("暂无热度数据")
+            Text("暂无状态数据")
                 .font(.headline)
                 .foregroundColor(.secondary)
             
-            Text("开始使用应用后，设备热度变化将显示在这里")
+            Text("开始使用应用后，设备状态变化将显示在这里")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -112,7 +112,7 @@ struct TemperatureChartView: View {
                 // 线图
                 LineMark(
                     x: .value("时间", dataPoint.time),
-                    y: .value("热度等级", dataPoint.value)
+                    y: .value("状态", dataPoint.value)
                 )
                 .foregroundStyle(dataPoint.color)
                 .lineStyle(StrokeStyle(lineWidth: 2))
@@ -120,7 +120,7 @@ struct TemperatureChartView: View {
                 // 数据点
                 PointMark(
                     x: .value("时间", dataPoint.time),
-                    y: .value("热度等级", dataPoint.value)
+                    y: .value("状态", dataPoint.value)
                 )
                 .foregroundStyle(dataPoint.color)
                 .symbolSize(40)
@@ -152,7 +152,7 @@ struct TemperatureChartView: View {
                     AxisTick()
                     AxisValueLabel {
                         if let doubleValue = value.as(Double.self) {
-                            Text(heatLevelLabelForValue(doubleValue))
+                            Text(stateLabelForValue(doubleValue))
                                 .font(.caption)
                         }
                     }
@@ -187,12 +187,12 @@ struct TemperatureChartView: View {
                             .font(.system(size: 40))
                             .foregroundColor(.secondary)
                         
-                        Text("简化热度记录")
+                        Text("简化状态记录")
                             .font(.headline)
                             .foregroundColor(.secondary)
                         
                         if let latest = chartData.last {
-                            Text("最新: \(latest.state.rawValue)")
+                            Text("最新: \(latest.stateDescription)")
                                 .font(.subheadline)
                                 .foregroundColor(.primary)
                         }
@@ -208,7 +208,7 @@ struct TemperatureChartView: View {
                 .fill(point.color)
                 .frame(width: 12, height: 12)
             
-            Text("\(point.timeString) - \(point.state.rawValue) (\(point.heatLevelDescription))")
+            Text("\(point.timeString) - \(point.stateDescription)")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
@@ -253,14 +253,14 @@ struct TemperatureChartView: View {
         chartData.min { abs($0.time.timeIntervalSince(date)) < abs($1.time.timeIntervalSince(date)) }
     }
     
-    // MARK: - 热度等级标签
-    private func heatLevelLabelForValue(_ value: Double) -> String {
+    // MARK: - 状态标签
+    private func stateLabelForValue(_ value: Double) -> String {
         switch value {
-        case 2.0: return "2级"
-        case 4.0: return "4级"
-        case 7.0: return "7级"
-        case 9.0: return "9级"
-        default: return "\(Int(value))级"
+        case 2.0: return "正常"
+        case 4.0: return "轻微"
+        case 7.0: return "中度"
+        case 9.0: return "严重"
+        default: return "未知"
         }
     }
 }

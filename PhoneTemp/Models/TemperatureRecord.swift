@@ -54,31 +54,55 @@ final class TemperatureRecord {
 
 // MARK: - 温度记录扩展方法
 extension TemperatureRecord {
-    /// 获取热度等级数值（1-10分制，用于图表显示）
-    var heatLevel: Double {
+    /// 内部数值映射（仅用于图表绘制和排序，不对外暴露）
+    internal var internalValue: Double {
         switch thermalState {
-        case .normal: return 2.0      // 正常状态 = 2/10级
-        case .fair: return 4.0        // 轻微发热 = 4/10级
-        case .serious: return 7.0     // 中度发热 = 7/10级
-        case .critical: return 9.0    // 严重发热 = 9/10级
+        case .normal: return 2.0
+        case .fair: return 4.0
+        case .serious: return 7.0
+        case .critical: return 9.0
         }
     }
     
-    /// 获取热度等级描述
-    var heatLevelDescription: String {
-        let level = Int(heatLevel)
-        return "\(level)/10级"
+    /// 获取状态描述（主要显示方式）
+    var stateDescription: String {
+        return thermalState.rawValue
     }
     
-    /// 获取热度等级简短描述
-    var heatLevelShort: String {
-        return "\(Int(heatLevel))级"
+    /// 获取简化的状态描述
+    var simpleStateDescription: String {
+        switch thermalState {
+        case .normal: return "正常"
+        case .fair: return "轻微"
+        case .serious: return "中度"
+        case .critical: return "严重"
+        }
+    }
+    
+    /// 获取详细的状态描述
+    var detailedStateDescription: String {
+        switch thermalState {
+        case .normal: return "设备运行正常"
+        case .fair: return "设备略微发热"
+        case .serious: return "设备明显发热"
+        case .critical: return "设备严重发热"
+        }
     }
     
     /// 兼容性属性：保持与原有代码的兼容
-    @available(*, deprecated, message: "请使用 heatLevel 替代")
+    @available(*, deprecated, message: "请使用 stateDescription 替代")
+    var heatLevel: Double {
+        return internalValue
+    }
+    
+    @available(*, deprecated, message: "请使用 stateDescription 替代")
+    var heatLevelDescription: String {
+        return stateDescription
+    }
+    
+    @available(*, deprecated, message: "请使用 stateDescription 替代")
     var temperatureValue: Double {
-        return heatLevel
+        return internalValue
     }
     
     /// 获取温度记录对应的颜色
@@ -113,7 +137,7 @@ struct TemperatureStats {
     let fairCount: Int
     let seriousCount: Int
     let criticalCount: Int
-    let averageHeatLevel: Double  // 改名：平均热度等级
+    let mostCommonState: ThermalState  // 改名：最常见状态
     let peakState: ThermalState
     let longestNormalPeriod: TimeInterval
     
@@ -124,8 +148,14 @@ struct TemperatureStats {
         self.seriousCount = records.filter { $0.thermalState == .serious }.count
         self.criticalCount = records.filter { $0.thermalState == .critical }.count
         
-        let totalHeatLevel = records.reduce(0.0) { $0 + $1.heatLevel }
-        self.averageHeatLevel = totalRecords > 0 ? totalHeatLevel / Double(totalRecords) : 0.0
+        // 找出最常见的状态
+        let states: [(ThermalState, Int)] = [
+            (.normal, normalCount),
+            (.fair, fairCount),
+            (.serious, seriousCount),
+            (.critical, criticalCount)
+        ]
+        self.mostCommonState = states.max(by: { $0.1 < $1.1 })?.0 ?? .normal
         
         // 找出峰值状态
         if criticalCount > 0 {
@@ -138,7 +168,7 @@ struct TemperatureStats {
             self.peakState = .normal
         }
         
-        // 计算最长正常温度持续时间（简化版本）
+        // 计算最长正常温度持续时间
         self.longestNormalPeriod = Self.calculateLongestNormalPeriod(records)
     }
     
@@ -174,7 +204,18 @@ struct TemperatureStats {
 // MARK: - 便利扩展
 extension TemperatureStats {
     /// 兼容性属性：保持与原有代码的兼容
-    @available(*, deprecated, message: "请使用 averageHeatLevel 替代")
+    @available(*, deprecated, message: "请使用 mostCommonState 替代")
+    var averageHeatLevel: Double {
+        let totalInternalValue = [
+            Double(normalCount) * 2.0,
+            Double(fairCount) * 4.0,
+            Double(seriousCount) * 7.0,
+            Double(criticalCount) * 9.0
+        ].reduce(0, +)
+        return totalRecords > 0 ? totalInternalValue / Double(totalRecords) : 0.0
+    }
+    
+    @available(*, deprecated, message: "请使用 mostCommonState 替代")
     var averageValue: Double {
         return averageHeatLevel
     }
@@ -192,32 +233,45 @@ extension TemperatureStats {
         return Double(heatingCount) / Double(totalRecords) * 100
     }
     
-    /// 获取最常见的温度状态
-    var mostCommonState: ThermalState {
-        let states: [(ThermalState, Int)] = [
-            (ThermalState.normal, normalCount),
-            (ThermalState.fair, fairCount),
-            (ThermalState.serious, seriousCount),
-            (ThermalState.critical, criticalCount)
-        ]
+    /// 获取状态范围描述
+    var stateRange: String {
+        let allStates = [
+            (normalCount > 0 ? ThermalState.normal : nil),
+            (fairCount > 0 ? ThermalState.fair : nil),
+            (seriousCount > 0 ? ThermalState.serious : nil),
+            (criticalCount > 0 ? ThermalState.critical : nil)
+        ].compactMap { $0 }
         
-        return states.max(by: { $0.1 < $1.1 })?.0 ?? ThermalState.normal
+        guard !allStates.isEmpty else { return "无记录" }
+        
+        if allStates.count == 1 {
+            return allStates.first!.rawValue
+        } else {
+            let minState = allStates.min { $0.internalValue < $1.internalValue }!
+            let maxState = allStates.max { $0.internalValue < $1.internalValue }!
+            return "\(minState.rawValue) - \(maxState.rawValue)"
+        }
     }
     
-    /// 格式化平均热度等级
+    /// 格式化最常见状态
+    var formattedMostCommonState: String {
+        return mostCommonState.rawValue
+    }
+    
+    /// 兼容性属性
+    @available(*, deprecated, message: "请使用 formattedMostCommonState 替代")
     var formattedAverageHeatLevel: String {
-        return String(format: "%.1f/10级", averageHeatLevel)
+        return formattedMostCommonState
     }
     
-    /// 格式化平均热度等级（简短版本）
+    @available(*, deprecated, message: "请使用 formattedMostCommonState 替代")
     var formattedAverageHeatLevelShort: String {
-        return String(format: "%.1f级", averageHeatLevel)
+        return formattedMostCommonState
     }
     
-    /// 兼容性属性：格式化平均温度值
-    @available(*, deprecated, message: "请使用 formattedAverageHeatLevel 替代")
+    @available(*, deprecated, message: "请使用 formattedMostCommonState 替代")
     var formattedAverageValue: String {
-        return formattedAverageHeatLevelShort
+        return formattedMostCommonState
     }
     
     /// 格式化最长正常持续时间
@@ -231,6 +285,19 @@ extension TemperatureStats {
             return "\(minutes)分钟"
         } else {
             return "少于1分钟"
+        }
+    }
+}
+
+// MARK: - ThermalState 内部值扩展
+extension ThermalState {
+    /// 内部数值（仅用于排序和图表，不对外暴露）
+    internal var internalValue: Double {
+        switch self {
+        case .normal: return 2.0
+        case .fair: return 4.0
+        case .serious: return 7.0
+        case .critical: return 9.0
         }
     }
 }

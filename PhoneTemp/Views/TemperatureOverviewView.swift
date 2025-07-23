@@ -8,6 +8,7 @@
 import SwiftUI
 
 // MARK: - 温度回顾主视图
+
 struct TemperatureOverviewView: View {
     private let recorder: TemperatureRecorder
     @Environment(\.dismiss) private var dismiss
@@ -45,22 +46,24 @@ struct TemperatureOverviewView: View {
                     // 时间范围选择器
                     timeRangeSelector
                     
-                    // 主要数据区域
+                    // 主要数据区域（包含范围和今天标签）
                     mainDataSection
                     
                     // 图表区域
                     chartSection
                     
+                    // 最新记录信息
+                    latestRecordSection
+                    
                     // 统计数据区域
                     statsSection
                     
-                    // 教育内容区域
+                    // 教育内容区域（灰色背景）
                     educationSection
                 }
             }
-            .background(Color(.systemGroupedBackground))
         }
-        .background(Color(.systemGroupedBackground))
+        .preferredColorScheme(.dark)
         .onAppear {
             recorder.loadTodayRecords()
         }
@@ -70,6 +73,7 @@ struct TemperatureOverviewView: View {
     }
     
     // MARK: - 顶部导航区域
+
     private var topNavigationArea: some View {
         ZStack {
             // 标题居中显示
@@ -102,6 +106,7 @@ struct TemperatureOverviewView: View {
     }
     
     // MARK: - 时间范围选择器
+
     private var timeRangeSelector: some View {
         VStack(spacing: 0) {
             // 使用原生分段控件，完全模仿健康应用的样式
@@ -114,7 +119,7 @@ struct TemperatureOverviewView: View {
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
-            .onChange(of: selectedTimeRange) { oldValue, newValue in
+            .onChange(of: selectedTimeRange) { _, newValue in
                 // 如果选择了不可用的选项，自动切换回日选项
                 if !newValue.isAvailable {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -128,93 +133,44 @@ struct TemperatureOverviewView: View {
             }
         }
         .background(Color(.systemBackground))
-        .overlay(
-            Rectangle()
-                .fill(Color(.systemGray4))
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
     }
     
     // MARK: - 主要数据区域
+
     private var mainDataSection: some View {
-        VStack(spacing: 20) {
-            // 范围和温度等级显示
+        VStack(alignment: .leading, spacing: 16) {
+            // 范围标签
+            Text("范围")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .textCase(.uppercase)
+            
+            // 状态范围显示
             HStack(alignment: .bottom, spacing: 8) {
-                Text(heatLevelRangeText)
-                    .font(.system(size: 36, weight: .light))
+                Text(stateRangeText)
+                    .font(.system(size: 48, weight: .light))
                     .foregroundColor(.primary)
                 
-                Text("级温度")
+                Text("状态")
                     .font(.title3)
                     .fontWeight(.regular)
                     .foregroundColor(.secondary)
-                    .padding(.bottom, 4)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // 今天标签和最新数据
-            HStack {
-                Text("今天")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
+                    .padding(.bottom, 6)
             }
             
-            // 最新记录信息
-            if let latestRecord = recorder.todayRecords.last {
-                HStack {
-                    Text("最新：")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Text(formatTime(latestRecord.timestamp))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(colorForState(latestRecord.thermalState))
-                            .frame(width: 8, height: 8)
-                        
-                        Text(latestRecord.heatLevelDescription)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-                        
-                        Text("温度")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color(.secondarySystemGroupedBackground))
-                .cornerRadius(8)
-            } else {
-                HStack {
-                    Text("暂无记录")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color(.secondarySystemGroupedBackground))
-                .cornerRadius(8)
-            }
+            // 今天标签
+            Text("今天")
+                .font(.footnote)
+                .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .background(Color(.systemBackground))
     }
     
     // MARK: - 图表区域
+
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             TemperatureChartView(records: recorder.todayRecords)
@@ -222,14 +178,51 @@ struct TemperatureOverviewView: View {
         }
         .padding(.vertical, 20)
         .background(Color(.systemBackground))
-        .padding(.top, 8)
+    }
+    
+    // MARK: - 最新记录区域
+
+    private var latestRecordSection: some View {
+        Group {
+            if let latestRecord = recorder.todayRecords.last {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 100)
+//                        .fill(Color("backgroundColor"))
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("最新：\(latestRecord.formattedTime)")
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                        }
+
+                        Spacer()
+
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color(latestRecord.color))
+                                .frame(width: 10, height: 10)
+                            
+                            Text(latestRecord.stateDescription)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .background(Color(.systemBackground))
     }
     
     // MARK: - 统计数据区域
+
     private var statsSection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("温度统计")
+                Text("状态统计")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
@@ -249,16 +242,16 @@ struct TemperatureOverviewView: View {
                 )
                 
                 StatCard(
-                    title: "平均温度",
-                    value: recorder.todayStats.formattedAverageHeatLevelShort,
-                    subtitle: "温度等级",
+                    title: "主要状态",
+                    value: recorder.todayStats.formattedMostCommonState,
+                    subtitle: "最常见",
                     color: .green
                 )
                 
                 StatCard(
                     title: "峰值状态",
                     value: recorder.todayStats.peakState.rawValue,
-                    subtitle: "最高温度",
+                    subtitle: "最高状态",
                     color: colorForState(recorder.todayStats.peakState)
                 )
                 
@@ -273,14 +266,14 @@ struct TemperatureOverviewView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .background(Color(.systemBackground))
-        .padding(.top, 8)
     }
     
     // MARK: - 教育内容区域
+
     private var educationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("关于设备温度")
+                Text("关于设备状态")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
@@ -288,7 +281,7 @@ struct TemperatureOverviewView: View {
                 Spacer()
             }
             
-            Text("设备温度监测帮助你了解手机的运行状态和发热程度。我们使用1-10级温度等级来直观显示设备的温度状态，让你更好地保护设备。")
+            Text("设备状态监测帮助你了解手机的运行状态和发热程度。我们直接显示设备的温度状态，让你更直观地了解设备当前的工作情况。")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .lineSpacing(4)
@@ -298,19 +291,19 @@ struct TemperatureOverviewView: View {
                 EducationRow(
                     icon: "cpu",
                     title: "什么会让设备快速升温？",
-                    description: "高性能应用（游戏、视频录制）、充电、阳光直射、后台应用过多、系统更新等都会快速提升设备温度等级。"
+                    description: "高性能应用（游戏、视频录制）、充电、阳光直射、后台应用过多、系统更新等都会让设备从正常状态变为发热状态。"
                 )
                 
                 EducationRow(
                     icon: "snowflake",
                     title: "如何给设备降温？",
-                    description: "关闭高耗能应用、降低屏幕亮度、停止充电、放置在通风处、启用低电量模式等方法都能有效降低温度等级。"
+                    description: "关闭高耗能应用、降低屏幕亮度、停止充电、放置在通风处、启用低电量模式等方法都能有效让设备恢复到正常状态。"
                 )
                 
                 EducationRow(
                     icon: "exclamationmark.triangle",
-                    title: "高温度对设备的影响",
-                    description: "长期高温度会影响电池寿命、降低处理器性能、可能导致意外关机，严重时还可能造成硬件损坏。"
+                    title: "不同状态对设备的影响",
+                    description: "轻微发热时设备仍可正常使用；中度发热时系统开始限制性能；严重发热时可能自动关机以保护硬件。"
                 )
                 
                 EducationRow(
@@ -322,23 +315,28 @@ struct TemperatureOverviewView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
-        .background(Color(.systemBackground))
+        .background(Color(.systemGray6))
         .padding(.top, 8)
         .padding(.bottom, 40)
     }
     
-    // MARK: - 辅助方法
-    
-    private var heatLevelRangeText: String {
-        let stats = recorder.todayStats
-        if stats.totalRecords == 0 {
-            return "0-0"
+    // MARK: - 计算属性（用于视图显示）
+
+    private var stateRangeText: String {
+        guard !recorder.todayRecords.isEmpty else { return "无数据" }
+        
+        let sortedRecords = recorder.todayRecords.sorted { $0.internalValue < $1.internalValue }
+        guard let minState = sortedRecords.first?.stateDescription,
+              let maxState = sortedRecords.last?.stateDescription
+        else {
+            return "无数据"
         }
         
-        let minValue = recorder.todayRecords.map(\.heatLevel).min() ?? 0.0
-        let maxValue = recorder.todayRecords.map(\.heatLevel).max() ?? 0.0
-        
-        return "\(Int(minValue))-\(Int(maxValue))"
+        if minState == maxState {
+            return minState
+        } else {
+            return "\(minState) - \(maxState)"
+        }
     }
     
     private func formatTime(_ date: Date) -> String {
@@ -370,7 +368,10 @@ struct TemperatureOverviewView: View {
     }
 }
 
+// 注意：TemperatureStats 和 TemperatureRecord 的扩展已在其他文件中定义
+
 // MARK: - 统计卡片视图
+
 struct StatCard: View {
     let title: String
     let value: String
@@ -407,6 +408,7 @@ struct StatCard: View {
 }
 
 // MARK: - 教育行视图
+
 struct EducationRow: View {
     let icon: String
     let title: String
@@ -435,6 +437,7 @@ struct EducationRow: View {
 }
 
 // MARK: - 温度教育详情页
+
 struct TemperatureEducationSheet: View {
     @Environment(\.dismiss) private var dismiss
     
@@ -444,7 +447,7 @@ struct TemperatureEducationSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // 标题区域
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("关于设备温度监测")
+                        Text("关于设备状态监测")
                             .font(.title2)
                             .fontWeight(.bold)
                         
@@ -456,24 +459,24 @@ struct TemperatureEducationSheet: View {
                     // 详细教育内容
                     VStack(alignment: .leading, spacing: 16) {
                         EducationSection(
-                            title: "什么是温度等级？",
+                            title: "设备状态说明",
                             icon: "thermometer.sun",
                             content: """
-                            温度等级是我们自定义的1-10级评分系统，用于直观显示设备的发热程度：
+                            我们监测设备的四种温度状态：
                             
-                            🟢 1-3级：正常温度
+                            🟢 正常状态
                             • 设备运行流畅，温度在正常范围内
                             • 可以放心使用各种应用功能
                             
-                            🟡 4-6级：轻微发热  
+                            🟡 轻微发热
                             • 设备开始升温，但仍在安全范围
                             • 建议适当减少高耗能操作
                             
-                            🟠 7-8级：明显发热
+                            🟠 中度发热
                             • 系统开始限制性能以保护硬件
                             • 需要立即采取降温措施
                             
-                            🔴 9-10级：严重发热
+                            🔴 严重发热
                             • 可能触发自动关机保护机制
                             • 必须停止使用并等待设备冷却
                             """
@@ -494,10 +497,10 @@ struct TemperatureEducationSheet: View {
                         )
                         
                         EducationSection(
-                            title: "高温度的危害",
+                            title: "不同状态的危害",
                             icon: "exclamationmark.triangle.fill",
                             content: """
-                            长期高温度会对设备造成以下影响：
+                            长期处于发热状态会对设备造成以下影响：
                             • 电池容量永久性下降
                             • 处理器自动降频保护
                             • 系统卡顿和应用崩溃
@@ -511,7 +514,7 @@ struct TemperatureEducationSheet: View {
                             title: "有效降温方法",
                             icon: "wind.snow",
                             content: """
-                            当设备温度等级过高时，你可以：
+                            当设备状态为发热时，你可以：
                             • 立即关闭高耗能应用和游戏
                             • 降低屏幕亮度到最低
                             • 停止充电并拔掉充电器
@@ -553,6 +556,7 @@ struct TemperatureEducationSheet: View {
 }
 
 // MARK: - 教育部分视图
+
 struct EducationSection: View {
     let title: String
     let icon: String
@@ -582,6 +586,7 @@ struct EducationSection: View {
 }
 
 // MARK: - Preview
+
 #Preview {
     TemperatureOverviewView()
 }
