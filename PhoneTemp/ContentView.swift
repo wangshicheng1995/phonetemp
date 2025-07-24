@@ -80,22 +80,20 @@ struct ContentView: View {
                                 .padding(.top, -60)
                                 .padding(.leading, 15)
                                 
-                                // 底部内容区域
+                                // 底部内容和按钮
                                 VStack {
                                     Spacer()
-                                    bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
-                                }
-                                
-                                // 回顾按钮 - 固定在右下角
-                                VStack {
-                                    Spacer()
-                                    HStack {
-                                        Spacer()
+                                    HStack(alignment: .bottom, spacing: 50) {
+                                        // 底部文本
+                                        bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
+//                                            .padding(.bottom, -20)
+
+                                        // 回顾按钮
                                         overviewButton
                                     }
                                 }
-                                .padding(.bottom, 140)
-                                .padding(.trailing, 30)
+                                .padding(.bottom, 40)
+                                .padding(.leading, 100)
                             }
                             .tag(index)
                         }
@@ -190,29 +188,27 @@ struct ContentView: View {
     
     // MARK: - 回顾按钮
     private var overviewButton: some View {
-        Button(action: {
-            triggerHapticFeedback()
-            showTemperatureOverview = true
-        }) {
-            ZStack {
-                // 背景圆圈 - 降级处理材质效果
-                Circle()
-                    .fill(backgroundMaterial)
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                        Circle()
-                            .stroke(.white.opacity(0.3), lineWidth: 1)
-                    )
-                
-                // 图表图标
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
+        VStack() {
+            Button(action: {
+                triggerHapticFeedback()
+                showTemperatureOverview = true
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
             }
+            .buttonStyle(PlainButtonStyle())
+            
+            Text("温度回顾")
+                .foregroundColor(.white.opacity(0.8))
+                .font(.system(size: 12, weight: .medium))
         }
-        .buttonStyle(PlainButtonStyle())
-        .scaleEffect(1.0)
-        .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
     }
     
     // 背景材质的降级处理
@@ -248,11 +244,12 @@ struct ContentView: View {
             if thermalState == .normal {
                 // 正常状态时显示文字
                 if isRealState {
-                    Text("看起来一切正常😉")
+                    Text("看起来一切正常")
                         .foregroundColor(.white.opacity(0.8))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .multilineTextAlignment(.center)
                         .padding(.leading, 15)
+                        .padding(.top, 40)
                 }
             } else if thermalState != .normal {
                 // 发热状态显示降温按钮 - 添加震动反馈
@@ -271,7 +268,7 @@ struct ContentView: View {
                         showCoolingTipsWithFeedback()
                     }) {
                         Text("轻点查看降温 Tips")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.white.opacity(0.8))
                             .font(.system(size: 12, weight: .medium))
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -279,7 +276,7 @@ struct ContentView: View {
                 .padding(.leading, 15)
             }
         }
-        .padding(.bottom, 50)
+        .padding(.bottom, 0)
     }
 }
 

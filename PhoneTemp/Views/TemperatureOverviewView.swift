@@ -15,22 +15,6 @@ struct TemperatureOverviewView: View {
     @State private var selectedTimeRange: TimeRange = .day
     @State private var showingEducationSheet = false
     
-    // 时间范围选择
-    enum TimeRange: String, CaseIterable {
-        case day = "日"
-        case week = "周"
-        case month = "月"
-        case sixMonths = "6个月"
-        case year = "年"
-        
-        var isAvailable: Bool {
-            switch self {
-            case .day: return true
-            default: return false // 其他范围暂未实现
-            }
-        }
-    }
-    
     // 初始化器
     init(recorder: TemperatureRecorder? = nil) {
         self.recorder = recorder ?? TemperatureRecorder.previewInstance()
@@ -94,7 +78,7 @@ struct TemperatureOverviewView: View {
                 Spacer()
                 
                 Button(action: { showingEducationSheet = true }) {
-                    Text("添加数据")
+                    Text("关于")
                         .font(.subheadline)
                         .foregroundColor(.blue)
                 }
@@ -130,6 +114,9 @@ struct TemperatureOverviewView: View {
                         impactFeedback.impactOccurred()
                     }
                 }
+                
+                // 触发数据重新加载
+                loadDataForSelectedRange()
             }
         }
         .background(Color(.systemBackground))
@@ -138,7 +125,7 @@ struct TemperatureOverviewView: View {
     // MARK: - 主要数据区域
 
     private var mainDataSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 8) {
             // 范围标签
             Text("范围")
                 .font(.footnote)
@@ -155,17 +142,17 @@ struct TemperatureOverviewView: View {
                     .font(.title3)
                     .fontWeight(.regular)
                     .foregroundColor(.secondary)
-                    .padding(.bottom, 6)
+                    .padding(.bottom, 3)
             }
             
-            // 今天标签
-            Text("今天")
+            // 时间范围标签
+            Text(timeRangeLabel)
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
-        .padding(.vertical, 20)
+        .padding(.vertical, 10)
         .background(Color(.systemBackground))
     }
     
@@ -173,10 +160,10 @@ struct TemperatureOverviewView: View {
 
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            TemperatureChartView(records: recorder.todayRecords)
+            TemperatureChartView(records: currentRecords, timeRange: selectedTimeRange)
                 .padding(.horizontal, 20)
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 0)
         .background(Color(.systemBackground))
     }
     
@@ -184,10 +171,11 @@ struct TemperatureOverviewView: View {
 
     private var latestRecordSection: some View {
         Group {
-            if let latestRecord = recorder.todayRecords.last {
+            if let latestRecord = currentRecords.last {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 100)
-//                        .fill(Color("backgroundColor"))
+                    RoundedRectangle(cornerRadius: 200)
+                        .fill(Color("backColor"))
+                        .frame(height: 45)
 
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -214,6 +202,7 @@ struct TemperatureOverviewView: View {
                 .padding(.horizontal, 20)
             }
         }
+        .padding(.top, 20)
         .background(Color(.systemBackground))
     }
     
@@ -236,28 +225,28 @@ struct TemperatureOverviewView: View {
             ], spacing: 12) {
                 StatCard(
                     title: "记录次数",
-                    value: "\(recorder.todayStats.totalRecords)",
-                    subtitle: "今日",
+                    value: "\(currentStats.totalRecords)",
+                    subtitle: timeRangeLabel,
                     color: .blue
                 )
                 
                 StatCard(
                     title: "主要状态",
-                    value: recorder.todayStats.formattedMostCommonState,
+                    value: currentStats.formattedMostCommonState,
                     subtitle: "最常见",
                     color: .green
                 )
                 
                 StatCard(
                     title: "峰值状态",
-                    value: recorder.todayStats.peakState.rawValue,
+                    value: currentStats.peakState.rawValue,
                     subtitle: "最高状态",
-                    color: colorForState(recorder.todayStats.peakState)
+                    color: colorForState(currentStats.peakState)
                 )
                 
                 StatCard(
                     title: "正常时长",
-                    value: formatDuration(recorder.todayStats.longestNormalPeriod),
+                    value: formatDuration(currentStats.longestNormalPeriod),
                     subtitle: "最长持续",
                     color: .orange
                 )
@@ -320,12 +309,46 @@ struct TemperatureOverviewView: View {
         .padding(.bottom, 40)
     }
     
-    // MARK: - 计算属性（用于视图显示）
+    // MARK: - 计算属性和辅助方法
+    
+    private var currentRecords: [TemperatureRecord] {
+        switch selectedTimeRange {
+        case .day:
+            return recorder.todayRecords
+        case .week:
+            return getRecordsForCurrentWeek()
+        case .month:
+            return getRecordsForCurrentMonth()
+        case .sixMonths:
+            return getRecordsForSixMonths()
+        case .year:
+            return getRecordsForCurrentYear()
+        }
+    }
+    
+    private var currentStats: TemperatureStats {
+        return TemperatureStats(records: currentRecords)
+    }
+    
+    private var timeRangeLabel: String {
+        switch selectedTimeRange {
+        case .day:
+            return "今天"
+        case .week:
+            return "本周"
+        case .month:
+            return "本月"
+        case .sixMonths:
+            return "6个月"
+        case .year:
+            return "今年"
+        }
+    }
 
     private var stateRangeText: String {
-        guard !recorder.todayRecords.isEmpty else { return "无数据" }
+        guard !currentRecords.isEmpty else { return "无数据" }
         
-        let sortedRecords = recorder.todayRecords.sorted { $0.internalValue < $1.internalValue }
+        let sortedRecords = currentRecords.sorted { $0.internalValue < $1.internalValue }
         guard let minState = sortedRecords.first?.stateDescription,
               let maxState = sortedRecords.last?.stateDescription
         else {
@@ -336,6 +359,63 @@ struct TemperatureOverviewView: View {
             return minState
         } else {
             return "\(minState) - \(maxState)"
+        }
+    }
+    
+    // MARK: - 数据加载方法
+    
+    private func loadDataForSelectedRange() {
+        // 触发UI刷新
+        DispatchQueue.main.async {
+            recorder.refresh()
+        }
+    }
+    
+    private func getRecordsForCurrentWeek() -> [TemperatureRecord] {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
+            return []
+        }
+        
+        return recorder.todayRecords.filter { record in
+            weekInterval.contains(record.timestamp)
+        }
+    }
+    
+    private func getRecordsForCurrentMonth() -> [TemperatureRecord] {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let monthInterval = calendar.dateInterval(of: .month, for: now) else {
+            return []
+        }
+        
+        return recorder.todayRecords.filter { record in
+            monthInterval.contains(record.timestamp)
+        }
+    }
+    
+    private func getRecordsForSixMonths() -> [TemperatureRecord] {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let sixMonthsAgo = calendar.date(byAdding: .month, value: -6, to: now) else {
+            return []
+        }
+        
+        return recorder.todayRecords.filter { record in
+            record.timestamp >= sixMonthsAgo
+        }
+    }
+    
+    private func getRecordsForCurrentYear() -> [TemperatureRecord] {
+        let calendar = Calendar.current
+        let now = Date()
+        guard let yearInterval = calendar.dateInterval(of: .year, for: now) else {
+            return []
+        }
+        
+        return recorder.todayRecords.filter { record in
+            yearInterval.contains(record.timestamp)
         }
     }
     
@@ -367,8 +447,6 @@ struct TemperatureOverviewView: View {
         }
     }
 }
-
-// 注意：TemperatureStats 和 TemperatureRecord 的扩展已在其他文件中定义
 
 // MARK: - 统计卡片视图
 
