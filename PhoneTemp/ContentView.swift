@@ -83,13 +83,17 @@ struct ContentView: View {
                                 // 底部内容和按钮
                                 VStack {
                                     Spacer()
-                                    HStack(alignment: .bottom, spacing: 50) {
+                                    HStack(alignment: .bottom, spacing: 30) {
+                                        Spacer()
+                                        
                                         // 底部文本
                                         bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
-//                                            .padding(.bottom, -20)
 
+                                        Spacer()
+                                        
                                         // 回顾按钮
                                         overviewButton
+                                            .padding(.trailing, 20)
                                     }
                                 }
                                 .padding(.bottom, 40)
@@ -205,7 +209,7 @@ struct ContentView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            Text("温度回顾")
+            Text("回顾")
                 .foregroundColor(.white.opacity(0.8))
                 .font(.system(size: 12, weight: .medium))
         }
@@ -252,23 +256,24 @@ struct ContentView: View {
                         .padding(.top, 40)
                 }
             } else if thermalState != .normal {
-                // 发热状态显示降温按钮 - 添加震动反馈
+                // 发热状态显示可点击的文本 - 添加震动反馈
                 VStack(spacing: 12) {
                     Button(action: {
                         showCoolingTipsWithFeedback()
                     }) {
-                        Image(systemName: "wind")
-                            .font(.title)
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 30, weight: .bold))
                             .foregroundColor(.white.opacity(0.9))
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    // 可点击的文本 - 同样添加震动反馈
+                    // 可点击的文本 - 震动反馈
                     Button(action: {
                         showCoolingTipsWithFeedback()
                     }) {
                         Text("轻点查看降温 Tips")
                             .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
                             .font(.system(size: 12, weight: .medium))
                     }
                     .buttonStyle(PlainButtonStyle())
