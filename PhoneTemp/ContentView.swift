@@ -72,32 +72,25 @@ struct ContentView: View {
                     TabView(selection: $currentPageIndex) {
                         ForEach(0..<allThermalStates.count, id: \.self) { index in
                             ZStack {
-                                // 热状态显示
-                                ThermalDisplayView(
-                                    thermalState: allThermalStates[index],
-                                    isCurrentState: index == realThermalStateIndex
-                                )
-                                .padding(.top, -60)
-                                .padding(.leading, 15)
-                                
-                                // 底部内容和按钮
-                                VStack {
-                                    Spacer()
-                                    HStack(alignment: .bottom, spacing: 30) {
-                                        Spacer()
-                                        
-                                        // 底部文本
-                                        bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
-
-                                        Spacer()
-                                        
-                                        // 回顾按钮
-                                        overviewButton
-                                            .padding(.trailing, 20)
+                                VStack(alignment: .center) {
+                                    // 热状态显示
+                                    Button(action: {
+                                        triggerHapticFeedback()
+                                        showTemperatureOverview = true
+                                    }) {
+                                        ThermalDisplayView(
+                                            thermalState: allThermalStates[index],
+                                            isCurrentState: index == realThermalStateIndex
+                                        )
+                                        .padding(.leading, 15)
                                     }
+                                    
+                                    // 底部内容和按钮
+                                    VStack {
+                                        bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
+                                    }
+                                    .padding(.bottom, 10)
                                 }
-                                .padding(.bottom, 40)
-                                .padding(.leading, 100)
                             }
                             .tag(index)
                         }
@@ -248,12 +241,11 @@ struct ContentView: View {
             if thermalState == .normal {
                 // 正常状态时显示文字
                 if isRealState {
-                    Text("看起来一切正常")
+                    Text("😋看起来一切正常")
                         .foregroundColor(.white.opacity(0.8))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .multilineTextAlignment(.center)
                         .padding(.leading, 15)
-                        .padding(.top, 40)
                 }
             } else if thermalState != .normal {
                 // 发热状态显示可点击的文本 - 添加震动反馈
@@ -261,9 +253,17 @@ struct ContentView: View {
                     Button(action: {
                         showCoolingTipsWithFeedback()
                     }) {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 30, weight: .bold))
-                            .foregroundColor(.white.opacity(0.9))
+                        ZStack {
+                            // 圆形背景框
+                            Circle()
+                                .stroke(Color.white.opacity(0.8), lineWidth: 5)
+                                .frame(width: 60, height: 60)
+                            
+                            // 箭头图标
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 40, weight: .medium))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
                     }
                     .buttonStyle(PlainButtonStyle())
                     
@@ -281,7 +281,7 @@ struct ContentView: View {
                 .padding(.leading, 15)
             }
         }
-        .padding(.bottom, 0)
+        .padding(.bottom, -10)
     }
 }
 
