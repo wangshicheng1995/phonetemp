@@ -58,9 +58,11 @@ struct OnboardingView: View {
     @Binding var isOnboardingComplete: Bool
     @EnvironmentObject var onboardingManager: OnboardingManager
     @State private var currentPageIndex: Int = 0
-    @State private var dragOffset: CGFloat = 0
-    @State private var isDragging: Bool = false
     
+    //
+    // Note: The `totalOffset` state is no longer needed.
+    // The offset is now calculated directly from `currentPageIndex`.
+    //
     private let pages = OnboardingPage.pages
     
     var body: some View {
@@ -71,9 +73,9 @@ struct OnboardingView: View {
                     .ignoresSafeArea(.all)
                 
                 VStack(spacing: 0) {
-                    // 使用 HStack 替代 ScrollView，手动处理滑动
-                    HStack(spacing: 0) {
-                        ForEach(0..<pages.count, id: \.self) { index in
+                    // 主内容区域 - 使用 TabView 实现更原生的滑动翻页
+                    TabView(selection: $currentPageIndex.animation(.spring())) {
+                        ForEach(pages.indices, id: \.self) { index in
                             OnboardingPageView(
                                 page: pages[index],
                                 isLastPage: index == pages.count - 1,
@@ -81,68 +83,32 @@ struct OnboardingView: View {
                                 onSkip: completeOnboarding
                             )
                             .environmentObject(onboardingManager)
-                            .frame(width: geometry.size.width)
+                            .tag(index)
                         }
                     }
-                    .offset(x: -CGFloat(currentPageIndex) * geometry.size.width + dragOffset)
-                    .animation(isDragging ? .none : .easeInOut(duration: 0.3), value: currentPageIndex)
-                    .animation(isDragging ? .none : .easeInOut(duration: 0.3), value: dragOffset)
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                isDragging = true
-                                dragOffset = value.translation.width
-                            }
-                            .onEnded { value in
-                                isDragging = false
-                                let threshold: CGFloat = geometry.size.width * 0.25 // 25% 的滑动距离触发切换
-                                let newIndex: Int
-                                
-                                if value.translation.width > threshold && currentPageIndex > 0 {
-                                    // 向右滑动，返回上一页
-                                    newIndex = currentPageIndex - 1
-                                } else if value.translation.width < -threshold && currentPageIndex < pages.count - 1 {
-                                    // 向左滑动，进入下一页
-                                    newIndex = currentPageIndex + 1
-                                } else {
-                                    // 滑动不足，保持当前页
-                                    newIndex = currentPageIndex
-                                }
-                                
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    currentPageIndex = newIndex
-                                    dragOffset = 0
-                                }
-                            }
-                    )
+                    .tabViewStyle(.page(indexDisplayMode: .never)) // 使用 .page 样式并隐藏默认指示器
                     
                     // 页面指示器和控制按钮
-                    bottomControls
+                    bottomControls(screenWidth: geometry.size.width)
+                        .frame(height: 100) // 固定高度
                 }
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear {
-            // 确保初始页面索引有效
-            if currentPageIndex >= pages.count {
-                currentPageIndex = 0
-            }
-        }
     }
     
     // MARK: - 底部控制区域
-    private var bottomControls: some View {
+    private func bottomControls(screenWidth: CGFloat) -> some View {
         HStack {
-            // 跳过按钮（非最后一页显示）
-            if currentPageIndex < pages.count - 1 {
-                Button("跳过") {
-                    completeOnboarding()
-                }
-                .foregroundColor(.white.opacity(0.6))
-                .font(.subheadline)
-            } else {
-                Spacer()
+            // MARK: - FIX: Replaced placeholder with a more robust version
+            // 跳过按钮 (在最后一页隐藏)
+            Button("跳过") {
+                completeOnboarding()
             }
+            .font(.subheadline)
+            .foregroundColor(.white.opacity(0.6))
+            .opacity(currentPageIndex < pages.count - 1 ? 1 : 0) // 通过透明度隐藏
+            .disabled(currentPageIndex == pages.count - 1) // 禁用按钮
             
             Spacer()
             
@@ -150,38 +116,31 @@ struct OnboardingView: View {
             if pages.count > 1 {
                 HStack(spacing: 8) {
                     ForEach(0..<pages.count, id: \.self) { index in
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
+                        Circle()
+                            .fill(index == currentPageIndex ? Color.white : Color.white.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .onTapGesture {
+                                // 点击指示器时，平滑地切换页面
                                 currentPageIndex = index
-                                dragOffset = 0
                             }
-                        }) {
-                            Circle()
-                                .fill(index == currentPageIndex ? Color.white : Color.white.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
             
             Spacer()
             
-            // 下一页按钮（非最后一页显示）
-            if currentPageIndex < pages.count - 1 {
-                Button("下一页") {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        let nextIndex = min(currentPageIndex + 1, pages.count - 1)
-                        currentPageIndex = nextIndex
-                        dragOffset = 0
-                    }
-                }
-                .foregroundColor(.blue)
-                .font(.subheadline)
-                .fontWeight(.medium)
-            } else {
-                Spacer()
+            // MARK: - FIX: Replaced placeholder logic to ensure visibility
+            // 下一页按钮 (在最后一页隐藏)
+            Button("下一页") {
+                // 平滑地移动到下一页
+                let nextIndex = min(currentPageIndex + 1, pages.count - 1)
+                currentPageIndex = nextIndex
             }
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundColor(.blue)
+            .opacity(currentPageIndex < pages.count - 1 ? 1 : 0) // 通过透明度隐藏
+            .disabled(currentPageIndex == pages.count - 1) // 禁用按钮
         }
         .padding(.horizontal, 30)
         .padding(.bottom, 40)
@@ -189,11 +148,13 @@ struct OnboardingView: View {
     
     // MARK: - 完成引导
     private func completeOnboarding() {
-        DispatchQueue.main.async {
+        // 使用 withAnimation 使得可能的界面切换更平滑
+        withAnimation {
             self.isOnboardingComplete = true
         }
     }
 }
+
 
 // MARK: - 单页引导视图
 struct OnboardingPageView: View {
@@ -203,7 +164,8 @@ struct OnboardingPageView: View {
     let onSkip: () -> Void
     @EnvironmentObject var onboardingManager: OnboardingManager
     
-    @State private var glowIntensity: Double = 0.5
+    @State private var animationOffset: CGFloat = 0
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
@@ -228,22 +190,39 @@ struct OnboardingPageView: View {
             }
         }
         .onAppear {
-            // 启动呼吸动画
-            withAnimation(
-                Animation.easeInOut(duration: 3.0)
-                    .repeatForever(autoreverses: true)
-            ) {
-                glowIntensity = 1.0
+            startAnimation()
+        }
+        .onDisappear {
+            stopAnimation()
+        }
+    }
+    
+    // MARK: - 手动动画控制
+    private func startAnimation() {
+        stopAnimation()
+        DispatchQueue.main.async {
+            self.animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                DispatchQueue.main.async {
+                    self.animationOffset += 0.05
+                    if self.animationOffset > .pi * 2 {
+                        self.animationOffset = 0
+                    }
+                }
             }
         }
+    }
+    
+    private func stopAnimation() {
+        animationTimer?.invalidate()
+        animationTimer = nil
     }
     
     // MARK: - 背景动态效果
     private var backgroundEffects: some View {
         ZStack {
             let colorScheme = page.thermalState.colorScheme
+            let glowIntensity = 0.5 + 0.3 * sin(animationOffset)
             
-            // 最外层模糊光晕
             RoundedRectangle(cornerRadius: 150)
                 .fill(
                     LinearGradient(
@@ -256,7 +235,6 @@ struct OnboardingPageView: View {
                 .blur(radius: 80)
                 .opacity(glowIntensity * 0.4)
             
-            // 中层光晕
             RoundedRectangle(cornerRadius: 120)
                 .fill(
                     LinearGradient(
@@ -275,14 +253,12 @@ struct OnboardingPageView: View {
     // MARK: - 内容区域
     private var contentArea: some View {
         VStack(alignment: .leading, spacing: 24) {
-            // 标题
             Text(page.title)
                 .font(.system(size: 22, weight: .medium))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            // 副标题
             if !page.subtitle.isEmpty {
                 Text(page.subtitle)
                     .font(.system(size: 16, weight: .regular))
@@ -291,7 +267,6 @@ struct OnboardingPageView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             
-            // 描述文字
             Text(page.description)
                 .font(.system(size: 15, weight: .regular))
                 .foregroundColor(.white.opacity(0.7))
@@ -300,14 +275,13 @@ struct OnboardingPageView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 30)
+        .offset(y: page.showPayment ? 30 : 0) // 第四页的偏移量
     }
     
     // MARK: - 付费选项
     private var paymentOptions: some View {
         VStack(spacing: 12) {
-            // 永久使用按钮
             Button(action: {
-                // 处理购买逻辑
                 handlePurchase()
             }) {
                 Text("¥3.00 永久使用")
@@ -320,9 +294,7 @@ struct OnboardingPageView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // 免费试用按钮
             Button(action: {
-                // 处理试用逻辑
                 handleFreeTrial()
             }) {
                 Text("3天免费试用")
@@ -338,32 +310,22 @@ struct OnboardingPageView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // 底部链接
             HStack(spacing: 20) {
-                Button("恢复购买") {
-                    // 处理恢复购买
-                    handleRestorePurchase()
-                }
+                Button("恢复购买") { handleRestorePurchase() }
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
                 .buttonStyle(PlainButtonStyle())
                 
-                Text("·")
-                    .foregroundColor(.white.opacity(0.3))
+                Text("·").foregroundColor(.white.opacity(0.3))
                 
-                Button("隐私政策") {
-                    // 打开隐私政策
-                }
+                Button("隐私政策") { /* 打开隐私政策 */ }
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
                 .buttonStyle(PlainButtonStyle())
                 
-                Text("·")
-                    .foregroundColor(.white.opacity(0.3))
+                Text("·").foregroundColor(.white.opacity(0.3))
                 
-                Button("用户协议") {
-                    // 打开用户协议
-                }
+                Button("用户协议") { /* 打开用户协议 */ }
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
                 .buttonStyle(PlainButtonStyle())
@@ -376,25 +338,35 @@ struct OnboardingPageView: View {
     // MARK: - 购买处理方法
     private func handlePurchase() {
         print("OnboardingPageView: 处理购买逻辑")
-        // TODO: 实现 StoreKit 购买逻辑
-        onboardingManager.completePurchase()
-        onComplete()
+        DispatchQueue.main.async {
+            onboardingManager.completePurchase()
+            onComplete()
+        }
     }
     
     private func handleFreeTrial() {
         print("OnboardingPageView: 开始3天免费试用")
-        onboardingManager.startFreeTrial()
-        onComplete()
+        DispatchQueue.main.async {
+            onboardingManager.startFreeTrial()
+            onComplete()
+        }
     }
     
     private func handleRestorePurchase() {
         print("OnboardingPageView: 恢复购买")
-        onboardingManager.restorePurchase()
+        DispatchQueue.main.async {
+            onboardingManager.restorePurchase()
+        }
     }
 }
 
 // MARK: - Preview
 #Preview {
+    //
+    // Note: You will need to define `ThermalState`, `OnboardingManager`,
+    // and the color schemes for the preview to work, as they were
+    // not fully defined in the original file.
+    //
     OnboardingView(isOnboardingComplete: .constant(false))
         .environmentObject(OnboardingManager())
 }
