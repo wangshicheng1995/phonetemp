@@ -10,9 +10,13 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var thermalManager = ThermalStateManager()
     @StateObject private var temperatureRecorder = TemperatureRecorder()
+    @StateObject private var storeKitManager = UniversalStoreKitManager.shared
+    
     @State private var currentPageIndex = 0
     @State private var showCoolingTips = false
     @State private var showTemperatureOverview = false
+    @State private var showPaywall = false
+    @State private var showPurchaseTest = false
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
@@ -128,6 +132,13 @@ struct ContentView: View {
         .sheet(isPresented: $showCoolingTips) {
             CoolingTipsSheet(thermalState: currentDisplayState)
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environmentObject(OnboardingManager())
+        }
+        .sheet(isPresented: $showPurchaseTest) {
+            PurchaseTestView()
+        }
         .modifier(FullScreenCoverModifier(isPresented: $showTemperatureOverview) {
             TemperatureOverviewView(recorder: temperatureRecorder)
         })
@@ -175,6 +186,54 @@ struct ContentView: View {
                 Text("手机温度")
                     .foregroundColor(.white.opacity(0.9))
                     .font(.title2)
+            }
+            
+            // 右侧按钮组
+            HStack {
+                Spacer()
+                
+                // 升级按钮（仅在未购买时显示）
+                if !isPreviewMode && !storeKitManager.isPremiumUnlocked {
+                    Button(action: {
+                        triggerHapticFeedback()
+                        showPaywall = true
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "crown.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                            
+                            Text("升级")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                
+                // 调试测试按钮
+                #if DEBUG
+                Button(action: {
+                    triggerHapticFeedback()
+                    showPurchaseTest = true
+                }) {
+                    Text("🧪")
+                        .font(.title2)
+                        .foregroundColor(.yellow)
+                        .padding(.leading, 8)
+                }
+                #endif
             }
         }
         .padding(.horizontal, 25)

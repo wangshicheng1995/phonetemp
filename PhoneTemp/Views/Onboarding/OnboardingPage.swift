@@ -43,9 +43,9 @@ struct OnboardingPage: Identifiable {
             showPayment: false
         ),
         OnboardingPage(
-            title: "所以我们创造了手机温度",
+            title: "所以我创造了手机温度",
             subtitle: "就像关心朋友的体温一样，\n简单而温暖地。",
-            description: "去感知，而非被忽视；\n去呵护，而非被透支。\n\n用（关怀），\n守护（数字生活的平衡）。\n\n你可以免费试用手机温度 3 天，\n或者，\n让它成为你设备健康的守护者。\n\nEnjoy。",
+            description: "There is another world, but it is in this one.\n- by William Butler Yeats.\n\n另一个世界确实存在，但它就在这个世界之中。\n-威廉·巴特勒·叶芝\n\n你可以免费试用手机温度三天，\n或者，\n让它成为你设备健康的守护者。\n\nEnjoy。",
             iconName: "heart",
             thermalState: .critical,
             showPayment: true
@@ -90,7 +90,7 @@ struct OnboardingView: View {
                     
                     // 页面指示器和控制按钮
                     bottomControls(screenWidth: geometry.size.width)
-                        .frame(height: 100) // 固定高度
+                        .frame(height: 10) // 固定高度
                 }
             }
         }
@@ -275,7 +275,7 @@ struct OnboardingPageView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 30)
-        .offset(y: page.showPayment ? 30 : 0) // 第四页的偏移量
+        .offset(y: page.showPayment ? 10 : 0) // 第四页的偏移量
     }
     
     // MARK: - 付费选项
