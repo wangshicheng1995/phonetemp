@@ -110,18 +110,37 @@ struct ContentView: View {
                             temperatureRecorder.invalidate()
                         }
                     }
-                    .onChange(of: thermalManager.currentThermalState) { oldState, newState in
-                        // 只有在非预览模式下才响应真实热状态变化
-                        guard customThermalState == nil && !isPreviewMode else { return }
+                    .onChange(of: scenePhase) { _, newPhase in
+                        guard !isPreviewMode else { return }
                         
-                        // 记录温度变化
-                        temperatureRecorder.recordTemperatureChange(newState: newState)
-                        
-                        // 当真实热状态改变时，如果当前显示的是之前的真实状态，则跳转到新的真实状态
-                        if isCurrentRealState {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                currentPageIndex = realThermalStateIndex
+                        switch newPhase {
+                        case .background:
+                            // 应用进入后台时的处理
+                            print("ContentView: App entering background")
+                            // 这里不再处理 Live Activity，已在 ThermalStateManager 中处理
+                            
+                        case .active:
+                            // 应用变为活跃状态时的处理
+                            print("ContentView: App becoming active")
+                            // 刷新温度记录
+                            temperatureRecorder.refresh()
+                            
+                            // 确保当前页面显示真实状态
+                            if currentPageIndex != realThermalStateIndex {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        currentPageIndex = realThermalStateIndex
+                                    }
+                                }
                             }
+                            
+                        case .inactive:
+                            // 应用变为非活跃状态（比如通知中心下拉时）
+                            print("ContentView: App becoming inactive")
+                            break
+                            
+                        @unknown default:
+                            break
                         }
                     }
                 }
@@ -223,17 +242,17 @@ struct ContentView: View {
                 }
                 
                 // 调试测试按钮
-                #if DEBUG
-                Button(action: {
-                    triggerHapticFeedback()
-                    showPurchaseTest = true
-                }) {
-                    Text("🧪")
-                        .font(.title2)
-                        .foregroundColor(.yellow)
-                        .padding(.leading, 8)
-                }
-                #endif
+//                #if DEBUG
+//                Button(action: {
+//                    triggerHapticFeedback()
+//                    showPurchaseTest = true
+//                }) {
+//                    Text("🧪")
+//                        .font(.title2)
+//                        .foregroundColor(.yellow)
+//                        .padding(.leading, 8)
+//                }
+//                #endif
             }
         }
         .padding(.horizontal, 25)

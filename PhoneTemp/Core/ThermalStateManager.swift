@@ -27,7 +27,14 @@ class ThermalStateManager: ObservableObject {
             object: nil
         )
         
-        // 监听应用生命周期
+        // 监听应用生命周期 - 添加更多生命周期事件
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillResignActive),
+            name: UIApplication.willResignActiveNotification,
+            object: nil
+        )
+        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(appDidEnterBackground),
@@ -39,6 +46,13 @@ class ThermalStateManager: ObservableObject {
             self,
             selector: #selector(appWillEnterForeground),
             name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
     }
@@ -112,10 +126,20 @@ class ThermalStateManager: ObservableObject {
         }
     }
     
-    // MARK: - 应用生命周期处理
+    // MARK: - 应用生命周期处理（修改时机）
+    
+    @objc private func appWillResignActive() {
+        print("ThermalStateManager: App will resign active")
+        Task { @MainActor in
+            // 在应用即将失去活跃状态时启动 Live Activity
+            self.activityManager?.handleAppWillResignActive(with: self.currentThermalState)
+        }
+    }
+    
     @objc private func appDidEnterBackground() {
         print("ThermalStateManager: App entered background")
         Task { @MainActor in
+            // 作为备用处理，检查 Live Activity 是否已启动
             self.activityManager?.handleAppBackgrounding(with: self.currentThermalState)
         }
     }
@@ -123,6 +147,15 @@ class ThermalStateManager: ObservableObject {
     @objc private func appWillEnterForeground() {
         print("ThermalStateManager: App will enter foreground")
         Task { @MainActor in
+            // 应用即将进入前台时的处理
+            print("Preparing for app to become active...")
+        }
+    }
+    
+    @objc private func appDidBecomeActive() {
+        print("ThermalStateManager: App became active")
+        Task { @MainActor in
+            // 应用变为活跃状态时停止 Live Activity
             self.activityManager?.handleAppForegrounding()
         }
     }
