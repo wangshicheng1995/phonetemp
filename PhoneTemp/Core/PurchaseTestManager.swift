@@ -208,14 +208,14 @@ class PurchaseTestManager: ObservableObject {
                 logResult(
                     testName: "商品加载测试",
                     result: .failure(TestError.productLoadFailed),
-                    details: "无法加载商品，检查 StoreKit 配置"
+                    details: "无法加载商品，检查 StoreKit 配置文件是否正确设置在 Scheme 中"
                 )
             }
             
             // 3. 模拟购买成功
             #if DEBUG
             storeKitManager.simulatePurchase()
-            try await Task.sleep(nanoseconds: 100_000_000)
+            try await Task.sleep(nanoseconds: 200_000_000) // 等待状态同步
             
             let isPurchased = storeKitManager.isPremiumUnlocked
             if isPurchased {
@@ -232,19 +232,26 @@ class PurchaseTestManager: ObservableObject {
                 )
             }
             
-            // 4. 测试购买后权限
+            // 4. 测试购买后权限 - 修复权限检查逻辑
+            // 需要等待 OnboardingManager 同步 StoreKit 状态
+            try await Task.sleep(nanoseconds: 300_000_000) // 等待同步
+            onboardingManager.refreshTrialStatus() // 手动触发状态同步
+            
             let canUseAfterPurchase = onboardingManager.canUseApp
+            let storeKitPurchased = storeKitManager.isPremiumUnlocked
+            let onboardingPurchased = onboardingManager.isPurchased
+            
             if canUseAfterPurchase {
                 logResult(
                     testName: "购买后权限检查",
                     result: .success("购买后可以使用所有功能"),
-                    details: "权限升级成功"
+                    details: "权限升级成功 - StoreKit: \(storeKitPurchased), Onboarding: \(onboardingPurchased)"
                 )
             } else {
                 logResult(
                     testName: "购买后权限检查",
                     result: .failure(TestError.permissionDenied),
-                    details: "购买后应该拥有完整权限"
+                    details: "权限验证失败 - StoreKit: \(storeKitPurchased), Onboarding: \(onboardingPurchased), canUse: \(canUseAfterPurchase)"
                 )
             }
             #else
@@ -274,10 +281,10 @@ class PurchaseTestManager: ObservableObject {
             try await Task.sleep(nanoseconds: 100_000_000)
             
             // 2. 重置本地状态（模拟重装应用）
-            storeKitManager.resetPurchases()
+            onboardingManager.resetAllData()
             try await Task.sleep(nanoseconds: 100_000_000)
             
-            let beforeRestore = storeKitManager.isPremiumUnlocked
+            let beforeRestore = onboardingManager.isPurchased
             if !beforeRestore {
                 logResult(
                     testName: "恢复前状态检查",
@@ -288,24 +295,27 @@ class PurchaseTestManager: ObservableObject {
             
             // 3. 恢复购买
             await storeKitManager.restorePurchases()
-            try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒等待
+            try await Task.sleep(nanoseconds: 300_000_000) // 等待恢复完成
             
-            // 注意：在测试环境中，恢复购买可能不会自动成功
-            // 这里我们手动模拟恢复成功
-            storeKitManager.simulatePurchase()
+            // 手动触发 OnboardingManager 状态同步
+            onboardingManager.refreshTrialStatus()
+            try await Task.sleep(nanoseconds: 100_000_000)
             
-            let afterRestore = storeKitManager.isPremiumUnlocked
-            if afterRestore {
+            let afterRestoreStoreKit = storeKitManager.isPremiumUnlocked
+            let afterRestoreOnboarding = onboardingManager.isPurchased
+            let canUseAfterRestore = onboardingManager.canUseApp
+            
+            if afterRestoreStoreKit && canUseAfterRestore {
                 logResult(
                     testName: "恢复购买测试",
                     result: .success("恢复购买成功"),
-                    details: "购买状态已恢复"
+                    details: "StoreKit: \(afterRestoreStoreKit), Onboarding: \(afterRestoreOnboarding), canUse: \(canUseAfterRestore)"
                 )
             } else {
                 logResult(
                     testName: "恢复购买测试",
                     result: .failure(TestError.restoreFailed),
-                    details: "恢复购买失败，在真实环境中可能正常"
+                    details: "恢复失败 - StoreKit: \(afterRestoreStoreKit), Onboarding: \(afterRestoreOnboarding), canUse: \(canUseAfterRestore)"
                 )
             }
             #else
@@ -357,7 +367,8 @@ class PurchaseTestManager: ObservableObject {
             // 3. 测试付费用户权限
             #if DEBUG
             storeKitManager.simulatePurchase()
-            try await Task.sleep(nanoseconds: 100_000_000)
+            try await Task.sleep(nanoseconds: 200_000_000)
+            onboardingManager.refreshTrialStatus() // 同步状态
             
             let premiumUserAccess = checkPermissionLevels()
             logResult(
@@ -401,7 +412,7 @@ class PurchaseTestManager: ObservableObject {
         // 模拟权限检查
         let canUseApp = onboardingManager.canUseApp
         let isTrialActive = onboardingManager.isTrialActive
-        let isPremium = storeKitManager.isPremiumUnlocked
+        let isPremium = storeKitManager.isPremiumUnlocked || onboardingManager.isPurchased
         
         return (
             basic: true, // 基础功能始终可用

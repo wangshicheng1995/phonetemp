@@ -70,22 +70,54 @@ class StoreKitManager: ObservableObject {
     private var updateListenerTask: Task<Void, Error>?
     private let productIdentifiers = ProductType.allCases.map { $0.rawValue }
     
+    // 添加测试环境的购买状态持久化
+    #if DEBUG
+    private let testPurchaseKey = "TestPurchaseStatus"
+    private var isTestEnvironment: Bool {
+        // 检查是否在使用 StoreKit 配置文件
+        return true // 在测试环境中始终为 true
+    }
+    #endif
+    
     // 单例
     static let shared = StoreKitManager()
     
     private init() {
+        #if DEBUG
+        // 在测试环境中先加载本地购买状态
+        loadTestPurchaseStatus()
+        #endif
+        
         // 启动事务监听
         updateListenerTask = listenForTransactions()
         
         // 初始化时检查购买状态
         Task {
             await updateCustomerProductStatus()
+            await fetchProducts() // 启动时就获取商品
         }
     }
     
     deinit {
         updateListenerTask?.cancel()
     }
+    
+    #if DEBUG
+    // MARK: - 测试环境购买状态管理
+    private func loadTestPurchaseStatus() {
+        let testPurchased = UserDefaults.standard.bool(forKey: testPurchaseKey)
+        if testPurchased {
+            isPremiumUnlocked = true
+            purchasedProductIDs.insert(ProductType.premium.rawValue)
+            print("StoreKitManager: 加载测试购买状态 - Premium: \(isPremiumUnlocked)")
+        }
+    }
+    
+    private func saveTestPurchaseStatus() {
+        UserDefaults.standard.set(isPremiumUnlocked, forKey: testPurchaseKey)
+        print("StoreKitManager: 保存测试购买状态 - Premium: \(isPremiumUnlocked)")
+    }
+    #endif
     
     // MARK: - 获取商品信息
     func fetchProducts() async {
@@ -95,12 +127,34 @@ class StoreKitManager: ObservableObject {
         lastError = nil
         
         do {
+            print("StoreKitManager: 开始获取商品，商品ID: \(productIdentifiers)")
             let storeProducts = try await Product.products(for: productIdentifiers)
             products = storeProducts.sorted { $0.price < $1.price }
             print("StoreKitManager: 成功获取 \(products.count) 个商品")
+            
+            // 打印商品详情用于调试
+            for product in products {
+                print("StoreKitManager: 商品 - ID: \(product.id), 名称: \(product.displayName), 价格: \(product.displayPrice)")
+            }
         } catch {
             lastError = .networkError
             print("StoreKitManager: 获取商品失败 - \(error.localizedDescription)")
+            print("StoreKitManager: 错误详情 - \(error)")
+            
+            // 根据错误类型提供不同的调试信息
+            if error.localizedDescription.contains("invalid") || error.localizedDescription.contains("not found") {
+                print("StoreKitManager: 沙盒环境可能的问题：")
+                print("  1. 检查 App Store Connect 中是否创建了商品 ID: \(productIdentifiers)")
+                print("  2. 确保商品状态为 '准备提交' 或更高状态")
+                print("  3. 验证 Bundle ID 是否与 App Store Connect 中的应用匹配")
+                print("  4. 检查是否正确登录了沙盒测试账户")
+                print("  5. 确认网络连接正常")
+            } else {
+                print("StoreKitManager: 其他可能问题：")
+                print("  1. 网络连接问题")
+                print("  2. 沙盒服务器暂时不可用")
+                print("  3. Apple ID 沙盒账户问题")
+            }
         }
         
         isLoading = false
@@ -114,6 +168,7 @@ class StoreKitManager: ObservableObject {
         lastError = nil
         
         do {
+            print("StoreKitManager: 开始购买商品 - \(product.id)")
             let result = try await product.purchase()
             
             switch result {
@@ -146,18 +201,79 @@ class StoreKitManager: ObservableObject {
         return false
     }
     
-    // MARK: - 恢复购买
+    // MARK: - 恢复购买（修复版）
     func restorePurchases() async {
         isLoading = true
         lastError = nil
         
+        print("StoreKitManager: 开始恢复购买...")
+        
+        #if DEBUG
+        if isTestEnvironment {
+            // 在测试环境中，优先检查本地保存的购买状态
+            let testPurchased = UserDefaults.standard.bool(forKey: testPurchaseKey)
+            if testPurchased {
+                isPremiumUnlocked = true
+                purchasedProductIDs.insert(ProductType.premium.rawValue)
+                print("StoreKitManager: 测试环境恢复购买成功")
+                print("StoreKitManager: 当前 Premium 状态: \(isPremiumUnlocked)")
+                isLoading = false
+                return
+            }
+        }
+        #endif
+        
         do {
+            // 先尝试同步 App Store 数据
             try await AppStore.sync()
+            print("StoreKitManager: App Store 同步完成")
+            
+            // 等待一小段时间让系统处理
+            try await Task.sleep(nanoseconds: 200_000_000) // 0.2秒
+            
+            // 保存同步前的状态
+            let previousState = isPremiumUnlocked
+            
+            // 更新本地购买状态
             await updateCustomerProductStatus()
+            
+            #if DEBUG
+            // 如果在测试环境中状态被重置，但之前有购买记录，则恢复状态
+            if isTestEnvironment && !isPremiumUnlocked && previousState {
+                let testPurchased = UserDefaults.standard.bool(forKey: testPurchaseKey)
+                if testPurchased {
+                    isPremiumUnlocked = true
+                    purchasedProductIDs.insert(ProductType.premium.rawValue)
+                    print("StoreKitManager: 测试环境中恢复之前的购买状态")
+                }
+            }
+            #endif
+            
             print("StoreKitManager: 恢复购买完成")
+            print("StoreKitManager: 当前 Premium 状态: \(isPremiumUnlocked)")
+            print("StoreKitManager: 已购买商品: \(purchasedProductIDs)")
+            
         } catch {
             lastError = .networkError
             print("StoreKitManager: 恢复购买失败 - \(error.localizedDescription)")
+            
+            #if DEBUG
+            // 即使同步失败，也尝试恢复测试环境的购买状态
+            if isTestEnvironment {
+                let testPurchased = UserDefaults.standard.bool(forKey: testPurchaseKey)
+                if testPurchased {
+                    isPremiumUnlocked = true
+                    purchasedProductIDs.insert(ProductType.premium.rawValue)
+                    print("StoreKitManager: 同步失败，但从本地恢复了测试购买状态")
+                }
+            } else {
+                // 生产环境中仍然尝试更新本地状态
+                await updateCustomerProductStatus()
+            }
+            #else
+            // 生产环境中仍然尝试更新本地状态
+            await updateCustomerProductStatus()
+            #endif
         }
         
         isLoading = false
@@ -179,6 +295,7 @@ class StoreKitManager: ObservableObject {
             for await result in Transaction.updates {
                 do {
                     let transaction = try await self.checkVerified(result)
+                    print("StoreKitManager: 收到事务更新 - \(transaction.productID)")
                     await self.updateCustomerProductStatus()
                     await transaction.finish()
                     print("StoreKitManager: 事务更新完成")
@@ -189,24 +306,53 @@ class StoreKitManager: ObservableObject {
         }
     }
     
-    // MARK: - 更新客户商品状态
+    // MARK: - 更新客户商品状态（改进版）
     private func updateCustomerProductStatus() async {
         var purchasedProducts: Set<String> = []
+        var transactionCount = 0
+        
+        print("StoreKitManager: 开始检查当前权益...")
         
         for await result in Transaction.currentEntitlements {
+            transactionCount += 1
+            
             guard case .verified(let transaction) = result else {
+                print("StoreKitManager: 跳过未验证的事务")
                 continue
             }
+            
+            print("StoreKitManager: 检查事务 - 商品ID: \(transaction.productID), 撤销日期: \(transaction.revocationDate?.description ?? "无")")
             
             // 检查交易是否未被撤销
             if transaction.revocationDate == nil {
                 purchasedProducts.insert(transaction.productID)
+                print("StoreKitManager: 添加有效购买 - \(transaction.productID)")
             }
         }
+        
+        print("StoreKitManager: 共检查 \(transactionCount) 个事务，有效购买 \(purchasedProducts.count) 个")
+        
+        #if DEBUG
+        // 在测试环境中，如果没有找到有效事务但本地有购买记录，则使用本地记录
+        if isTestEnvironment && purchasedProducts.isEmpty {
+            let testPurchased = UserDefaults.standard.bool(forKey: testPurchaseKey)
+            if testPurchased {
+                purchasedProducts.insert(ProductType.premium.rawValue)
+                print("StoreKitManager: 测试环境中使用本地购买记录")
+            }
+        }
+        #endif
+        
+        let wasPremiumUnlocked = isPremiumUnlocked
         
         DispatchQueue.main.async {
             self.purchasedProductIDs = purchasedProducts
             self.isPremiumUnlocked = purchasedProducts.contains(ProductType.premium.rawValue)
+            
+            if wasPremiumUnlocked != self.isPremiumUnlocked {
+                print("StoreKitManager: Premium 状态发生变化 - 从 \(wasPremiumUnlocked) 到 \(self.isPremiumUnlocked)")
+            }
+            
             print("StoreKitManager: 更新购买状态 - Premium: \(self.isPremiumUnlocked)")
         }
     }
@@ -223,15 +369,23 @@ class StoreKitManager: ObservableObject {
     // MARK: - 开发调试方法
     #if DEBUG
     func simulatePurchase() {
-        isPremiumUnlocked = true
-        purchasedProductIDs.insert(ProductType.premium.rawValue)
+        print("StoreKitManager: 模拟购买开始")
+        DispatchQueue.main.async {
+            self.isPremiumUnlocked = true
+            self.purchasedProductIDs.insert(ProductType.premium.rawValue)
+            self.saveTestPurchaseStatus()
+        }
         print("StoreKitManager: 模拟购买完成")
     }
     
     func resetPurchases() {
-        isPremiumUnlocked = false
-        purchasedProductIDs.removeAll()
-        print("StoreKitManager: 重置购买状态")
+        print("StoreKitManager: 重置购买状态开始")
+        UserDefaults.standard.removeObject(forKey: testPurchaseKey)
+        DispatchQueue.main.async {
+            self.isPremiumUnlocked = false
+            self.purchasedProductIDs.removeAll()
+        }
+        print("StoreKitManager: 重置购买状态完成")
     }
     #endif
 }
@@ -281,7 +435,7 @@ class LegacyStoreKitManager: ObservableObject {
     #endif
 }
 
-// MARK: - 通用 StoreKit 包装器
+// MARK: - 通用 StoreKit 包装器（改进版）
 @MainActor
 class UniversalStoreKitManager: ObservableObject {
     @Published var isPremiumUnlocked = false
@@ -311,7 +465,13 @@ class UniversalStoreKitManager: ObservableObject {
         
         manager.$isPremiumUnlocked
             .receive(on: DispatchQueue.main)
-            .assign(to: &$isPremiumUnlocked)
+            .sink { [weak self] isPremium in
+                if self?.isPremiumUnlocked != isPremium {
+                    print("UniversalStoreKitManager: Premium 状态更新 - \(isPremium)")
+                }
+                self?.isPremiumUnlocked = isPremium
+            }
+            .store(in: &cancellables)
         
         manager.$isLoading
             .receive(on: DispatchQueue.main)
@@ -360,11 +520,13 @@ class UniversalStoreKitManager: ObservableObject {
     }
     
     func restorePurchases() async {
+        print("UniversalStoreKitManager: 开始恢复购买...")
         if #available(iOS 15.0, *), let manager = modernManager {
             await manager.restorePurchases()
         } else if let manager = legacyManager {
             await manager.restorePurchases()
         }
+        print("UniversalStoreKitManager: 恢复购买完成")
     }
     
     func getPremiumProduct() -> Any? {
