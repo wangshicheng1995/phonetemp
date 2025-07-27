@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var showTemperatureOverview = false
     @State private var showPaywall = false
     @State private var showPurchaseTest = false
+    @State private var showOneTapCooling = false // 新增：一键降温界面
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
@@ -117,7 +118,6 @@ struct ContentView: View {
                         case .background:
                             // 应用进入后台时的处理
                             print("ContentView: App entering background")
-                            // 这里不再处理 Live Activity，已在 ThermalStateManager 中处理
                             
                         case .active:
                             // 应用变为活跃状态时的处理
@@ -143,6 +143,23 @@ struct ContentView: View {
                             break
                         }
                     }
+                }
+                
+                // 浮动操作按钮
+                FloatingActionButton(
+                    thermalState: currentDisplayState,
+                    showCoolingTips: $showCoolingTips,
+                    showTemperatureOverview: $showTemperatureOverview,
+                    showOneTapCooling: $showOneTapCooling
+                )
+                
+                // 一键降温全屏覆盖
+                if showOneTapCooling {
+                    OneTapCoolingView(
+                        isPresented: $showOneTapCooling,
+                        thermalState: currentDisplayState
+                    )
+                    .zIndex(999) // 确保在最顶层
                 }
             }
         }
@@ -240,19 +257,6 @@ struct ContentView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-                
-                // 调试测试按钮
-//                #if DEBUG
-//                Button(action: {
-//                    triggerHapticFeedback()
-//                    showPurchaseTest = true
-//                }) {
-//                    Text("🧪")
-//                        .font(.title2)
-//                        .foregroundColor(.yellow)
-//                        .padding(.leading, 8)
-//                }
-//                #endif
             }
         }
         .padding(.horizontal, 25)
@@ -325,19 +329,18 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                         .padding(.leading, 15)
                 }
-            } else if thermalState != .normal {
-                // 发热状态显示可点击的文本 - 添加震动反馈
+            } else {
+                // 发热状态显示降温Tips按钮和提示文字
                 VStack(spacing: 12) {
+                    // 降温Tips按钮
                     Button(action: {
                         showCoolingTipsWithFeedback()
                     }) {
                         ZStack {
-                            // 圆形背景框
                             Circle()
                                 .stroke(Color.white.opacity(0.8), lineWidth: 5)
                                 .frame(width: 60, height: 60)
                             
-                            // 箭头图标
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 40, weight: .medium))
                                 .foregroundColor(.white.opacity(0.9))
@@ -345,7 +348,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    // 可点击的文本 - 震动反馈
+                    // 可点击的文本
                     Button(action: {
                         showCoolingTipsWithFeedback()
                     }) {
