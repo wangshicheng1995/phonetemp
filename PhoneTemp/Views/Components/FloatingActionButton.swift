@@ -58,20 +58,24 @@ struct FloatingActionButton: View {
         }) {
             ZStack {
                 Circle()
-                    .fill(.white)
+                    .fill(.ultraThinMaterial) // 使用磨砂材质
                     .frame(width: 56, height: 56)
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.1), lineWidth: 1) // 添加细微边框
+                    )
                 
                 if isExpanded {
                     // 展开状态：显示 X 图标
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white) // 改为白色
                 } else {
                     // 收起状态：显示 + 图标
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white) // 改为白色
                 }
             }
         }

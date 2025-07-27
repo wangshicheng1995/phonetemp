@@ -65,9 +65,8 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // 深色背景 - 扩展到整个屏幕包括顶部
-                Color(red: 0.05, green: 0.08, blue: 0.08)
-                    .ignoresSafeArea(.all)
+                // 统一的背景 - 使用与热状态显示相同的基础色调
+                backgroundView
             
                 VStack(spacing: 0) {
                     // 固定的顶部工具栏
@@ -206,22 +205,62 @@ struct ContentView: View {
         }
     }
     
+    // MARK: - 统一背景视图
+    private var backgroundView: some View {
+        GeometryReader { geometry in
+            let colorScheme = currentDisplayState.colorScheme
+            
+            ZStack {
+                // 基础深色背景
+                Color(red: 0.05, green: 0.08, blue: 0.08)
+                    .ignoresSafeArea(.all)
+                
+                // 全屏渐变覆盖层 - 从顶部开始的柔和渐变
+                RadialGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: colorScheme.outerGlow[0].opacity(0.08), location: 0.3),
+                        .init(color: colorScheme.outerGlow[1].opacity(0.04), location: 0.6),
+                        .init(color: Color.clear, location: 1.0)
+                    ]),
+                    center: UnitPoint(x: 0.5, y: 0.7), // 中心点偏下，让顶部也有轻微的色彩
+                    startRadius: 50,
+                    endRadius: geometry.size.height * 0.8
+                )
+                .ignoresSafeArea(.all)
+            }
+        }
+    }
+    
     // MARK: - 顶部工具栏
     private var topToolbar: some View {
         ZStack {
-            // App 名称和图标
-            HStack(spacing: 8) {
-                // App 图标
-                Image("temp_icon")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(0.9))
-                
-                // App 名称
-                Text("手机温度")
-                    .foregroundColor(.white.opacity(0.9))
-                    .font(.title2)
+            // App 名称和图标 - 添加点击测试推送功能
+            Button(action: {
+                // 单击处理
+                triggerTestNotification(isUpgrade: true)
+            }) {
+                HStack(spacing: 8) {
+                    // App 图标
+                    Image("temp_icon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.white.opacity(0.9))
+                    
+                    // App 名称
+                    Text("手机温度")
+                        .foregroundColor(.white.opacity(0.9))
+                        .font(.title2)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onTapGesture(count: 2) {
+                // 双击处理
+                triggerTestNotification(isUpgrade: false)
+            }
+            .onTapGesture(count: 1) {
+                // 单击处理
+                triggerTestNotification(isUpgrade: true)
             }
             
             // 右侧按钮组
@@ -262,7 +301,33 @@ struct ContentView: View {
         .padding(.horizontal, 25)
         .padding(.top, 40)
         .frame(maxWidth: .infinity)
-        .background(Color.clear)
+        .background(Color.clear) // 移除背景，让渐变层透过
+    }
+    
+    // MARK: - 新增：测试推送功能（升温/降温）
+    private func triggerTestNotification(isUpgrade: Bool) {
+        triggerHapticFeedback()
+        
+        // 显示视觉反馈（不同类型使用不同强度）
+        let impactFeedback = UIImpactFeedbackGenerator(style: isUpgrade ? .medium : .light)
+        impactFeedback.impactOccurred()
+        
+        // 发送对应类型的测试推送
+        if isUpgrade {
+            // 单击：发送升温通知（正常 → 严重发热）
+            thermalManager.getNotificationManager().sendThermalStateChangeNotification(
+                from: .normal,
+                to: .critical
+            )
+            print("ContentView: 测试升温推送已触发 (正常 → 严重发热)")
+        } else {
+            // 双击：发送降温通知（严重发热 → 正常）
+            thermalManager.getNotificationManager().sendThermalStateChangeNotification(
+                from: .critical,
+                to: .normal
+            )
+            print("ContentView: 测试降温推送已触发 (严重发热 → 正常)")
+        }
     }
     
     // MARK: - 回顾按钮
