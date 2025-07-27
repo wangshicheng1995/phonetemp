@@ -45,6 +45,6 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>LSMinimumSystemVersion</key>
-	<string>18.0</string>
+	<string>11.0</string>
 </dict>
 </plist>
