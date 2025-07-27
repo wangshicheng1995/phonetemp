@@ -69,9 +69,6 @@ struct ContentView: View {
                 backgroundView
             
                 VStack(spacing: 0) {
-                    // 固定的顶部工具栏
-                    topToolbar
-                    
                     // 可滑动的主要内容区域
                     TabView(selection: $currentPageIndex) {
                         ForEach(0..<allThermalStates.count, id: \.self) { index in
@@ -142,6 +139,12 @@ struct ContentView: View {
                             break
                         }
                     }
+                }
+                
+                // 将 topToolbar 移至 ZStack 顶层，并调整布局
+                VStack {
+                    topToolbar
+                    Spacer()
                 }
                 
                 // 浮动操作按钮
@@ -215,16 +218,15 @@ struct ContentView: View {
                 Color(red: 0.05, green: 0.08, blue: 0.08)
                     .ignoresSafeArea(.all)
                 
-                // 全屏渐变覆盖层 - 从顶部开始的柔和渐变
-                RadialGradient(
+                // 全屏渐变覆盖层 - 改为线性渐变，从上到下过渡更自然
+                LinearGradient(
                     gradient: Gradient(stops: [
-                        .init(color: colorScheme.outerGlow[0].opacity(0.08), location: 0.3),
-                        .init(color: colorScheme.outerGlow[1].opacity(0.04), location: 0.6),
-                        .init(color: Color.clear, location: 1.0)
+                        .init(color: colorScheme.outerGlow[0].opacity(0.25), location: 0.0),
+                        .init(color: colorScheme.outerGlow[1].opacity(0.1), location: 0.4),
+                        .init(color: Color.clear, location: 0.7)
                     ]),
-                    center: UnitPoint(x: 0.5, y: 0.7), // 中心点偏下，让顶部也有轻微的色彩
-                    startRadius: 50,
-                    endRadius: geometry.size.height * 0.8
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
                 .ignoresSafeArea(.all)
             }
@@ -299,9 +301,8 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 25)
-        .padding(.top, 40)
+        .padding(.top, 10) // 调整顶部安全距离
         .frame(maxWidth: .infinity)
-        .background(Color.clear) // 移除背景，让渐变层透过
     }
     
     // MARK: - 新增：测试推送功能（升温/降温）
