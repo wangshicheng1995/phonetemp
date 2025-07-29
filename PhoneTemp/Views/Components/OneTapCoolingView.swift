@@ -165,7 +165,7 @@ struct OneTapCoolingView: View {
                 .lineSpacing(8)
                 .padding(.horizontal, 30)
             
-            Text("别担心，温度恢复正常后，\n手机温度会推送消息，你可继续正常使用。")
+            Text("别担心，温度恢复正常后，\n手机热度会推送消息，你可继续正常使用。")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
                 .multilineTextAlignment(.center)

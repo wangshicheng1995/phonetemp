@@ -68,7 +68,7 @@ class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - 发送温度变化通知
+    // MARK: - 发送热度变化通知
     func sendThermalStateChangeNotification(from previousState: ThermalState, to currentState: ThermalState) {
         guard isAuthorized else {
             print("NotificationManager: 推送未授权，跳过发送")
@@ -84,9 +84,9 @@ class NotificationManager: NSObject, ObservableObject {
         
         notificationCenter.add(request) { error in
             if let error = error {
-                print("NotificationManager: 发送温度变化通知失败 - \(error.localizedDescription)")
+                print("NotificationManager: 发送热度变化通知失败 - \(error.localizedDescription)")
             } else {
-                print("NotificationManager: 温度变化通知已发送 - \(previousState.rawValue) → \(currentState.rawValue)")
+                print("NotificationManager: 热度变化通知已发送 - \(previousState.rawValue) → \(currentState.rawValue)")
             }
         }
     }
@@ -99,7 +99,7 @@ class NotificationManager: NSObject, ObservableObject {
         }
         
         let content = UNMutableNotificationContent()
-        content.title = "手机温度测试"
+        content.title = "手机热度测试"
         content.body = "推送功能正常工作 ✓\n当前时间：\(formatCurrentTime())"
         content.sound = .default
         content.badge = 1
@@ -125,20 +125,20 @@ class NotificationManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - 创建温度变化通知内容
+    // MARK: - 创建热度变化通知内容
     private func createThermalChangeContent(from previousState: ThermalState, to currentState: ThermalState) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         
-        // 根据温度变化方向和状态生成不同的通知内容
+        // 根据热度变化方向和状态生成不同的通知内容
         let isHeatingUp = isStateHigher(currentState, than: previousState)
         
         if isHeatingUp {
-            // 温度上升
+            // 热度上升
             content.title = getThermalUpgradeTitle(to: currentState)
             content.body = getThermalUpgradeBody(from: previousState, to: currentState)
             content.sound = currentState == .critical ? .defaultCritical : .default
         } else {
-            // 温度下降
+            // 热度下降
             content.title = getThermalDowngradeTitle(to: currentState)
             content.body = getThermalDowngradeBody(from: previousState, to: currentState)
             content.sound = .default
@@ -159,15 +159,15 @@ class NotificationManager: NSObject, ObservableObject {
         return content
     }
     
-    // MARK: - 温度上升通知文案
+    // MARK: - 热度上升通知文案
     private func getThermalUpgradeTitle(to state: ThermalState) -> String {
         switch state {
         case .normal:
-            return "设备温度正常"
+            return "设备热度正常"
         case .fair:
             return "设备开始升温"
         case .serious:
-            return "设备温度较高"
+            return "设备热度较高"
         case .critical:
             return "⚠️ 设备严重发热"
         }
@@ -180,21 +180,21 @@ class NotificationManager: NSObject, ObservableObject {
         case .fair:
             return "设备开始升温，建议适当减少高耗能操作。"
         case .serious:
-            return "设备温度较高，建议立即采取降温措施。"
+            return "设备热度较高，建议立即采取降温措施。"
         case .critical:
             return "设备严重发热！请立即停止使用并等待设备冷却。"
         }
     }
     
-    // MARK: - 温度下降通知文案
+    // MARK: - 热度下降通知文案
     private func getThermalDowngradeTitle(to state: ThermalState) -> String {
         switch state {
         case .normal:
             return "😊 设备已恢复正常"
         case .fair:
-            return "设备温度好转"
+            return "设备热度好转"
         case .serious:
-            return "设备温度下降"
+            return "设备热度下降"
         case .critical:
             return "设备仍在发热"
         }
@@ -203,13 +203,13 @@ class NotificationManager: NSObject, ObservableObject {
     private func getThermalDowngradeBody(from previousState: ThermalState, to currentState: ThermalState) -> String {
         switch currentState {
         case .normal:
-            return "设备温度已恢复正常，可以正常使用了。"
+            return "设备热度已恢复正常，可以正常使用了。"
         case .fair:
-            return "设备温度有所好转，继续保持良好的使用习惯。"
+            return "设备热度有所好转，继续保持良好的使用习惯。"
         case .serious:
-            return "设备温度有所下降，但仍需注意散热。"
+            return "设备热度有所下降，但仍需注意散热。"
         case .critical:
-            return "设备温度略有下降，但仍处于危险状态，请继续等待。"
+            return "设备热度略有下降，但仍处于危险状态，请继续等待。"
         }
     }
     
@@ -291,7 +291,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
             case "thermal_change":
                 if let currentState = userInfo["current_state"] as? String,
                    let isHeatingUp = userInfo["is_heating_up"] as? Bool {
-                    print("NotificationManager: 用户点击了温度变化通知 - 当前状态: \(currentState), 升温: \(isHeatingUp)")
+                    print("NotificationManager: 用户点击了热度变化通知 - 当前状态: \(currentState), 升温: \(isHeatingUp)")
                     // 可以在这里添加导航到特定页面的逻辑
                 }
                 

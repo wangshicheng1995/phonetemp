@@ -35,7 +35,7 @@ struct PhoneTempWidgetLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("设备温度状态")
+                            Text("设备热度状态")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             
@@ -82,7 +82,7 @@ private func lockScreenView(context: ActivityViewContext<ThermalActivityAttribut
         
         // 状态信息
         VStack(alignment: .leading, spacing: 4) {
-            Text("设备温度")
+            Text("设备热度")
                 .font(.caption)
                 .foregroundColor(.secondary)
             

@@ -4,11 +4,6 @@
 <dict>
     <key>NSSupportsLiveActivities</key>
     <true/>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-        <string>background-processing</string>
-    </array>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -47,8 +42,5 @@
     </array>
     <key>LSMinimumSystemVersion</key>
     <string>11.0</string>
-    <!-- 新增：推送权限描述 -->
-    <key>NSUserNotificationAlertStyle</key>
-    <string>alert</string>
 </dict>
 </plist>

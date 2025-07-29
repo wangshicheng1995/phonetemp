@@ -43,9 +43,9 @@ struct OnboardingPage: Identifiable {
             showPayment: false
         ),
         OnboardingPage(
-            title: "所以我创造了手机温度",
-            subtitle: "就像关心朋友的体温一样，\n简单而温暖地。",
-            description: "There is another world, but it is in this one.\n- by William Butler Yeats.\n\n另一个世界确实存在，但它就在这个世界之中。\n-威廉·巴特勒·叶芝\n\n你可以免费试用手机温度三天，\n或者，\n让它成为你设备健康的守护者。\n\nEnjoy。",
+            title: "所以我创造了手机热度",
+            subtitle: "就像关心朋友的体温一样，\n简单而温暖地关心手机的热度。",
+            description: "你可以免费试用手机热度三天，\n或者，\n让它成为你设备健康的守护者。\n\nEnjoy。\n\n本 App 基于 Apple 官方提供的 thermalState API，用于监测设备的散热压力等级，而非提供精确的物理温度（摄氏度/华氏度）。\n\n这些状态反映了系统为保持凉爽而进行自我调节的程度，可以帮助您了解何时应减少高负荷操作，以保护电池和设备性能。",
             iconName: "heart",
             thermalState: .critical,
             showPayment: true

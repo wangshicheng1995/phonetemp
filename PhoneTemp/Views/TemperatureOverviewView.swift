@@ -61,7 +61,7 @@ struct TemperatureOverviewView: View {
     private var topNavigationArea: some View {
         ZStack {
             // 标题居中显示
-            Text("设备温度")
+            Text("设备热度")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
@@ -135,7 +135,7 @@ struct TemperatureOverviewView: View {
             // 状态范围显示
             HStack(alignment: .bottom, spacing: 8) {
                 Text(stateRangeText)
-                    .font(.system(size: 48, weight: .light))
+                    .font(.system(size: 38, weight: .light))
                     .foregroundColor(.primary)
                 
                 Text("状态")

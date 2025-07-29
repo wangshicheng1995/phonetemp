@@ -17,7 +17,7 @@ struct ContentView: View {
     @State private var showTemperatureOverview = false
     @State private var showPaywall = false
     @State private var showPurchaseTest = false
-    @State private var showOneTapCooling = false // 新增：一键降温界面
+    @State private var showOneTapCooling = false
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
@@ -84,6 +84,7 @@ struct ContentView: View {
                                             isCurrentState: index == realThermalStateIndex
                                         )
                                         .padding(.leading, 15)
+                                        .padding(.top, 20)
                                     }
                                     
                                     // 底部内容和按钮
@@ -236,33 +237,19 @@ struct ContentView: View {
     // MARK: - 顶部工具栏
     private var topToolbar: some View {
         ZStack {
-            // App 名称和图标 - 添加点击测试推送功能
-            Button(action: {
-                // 单击处理
-                triggerTestNotification(isUpgrade: true)
-            }) {
-                HStack(spacing: 8) {
-                    // App 图标
-                    Image("temp_icon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(.white.opacity(0.9))
-                    
-                    // App 名称
-                    Text("手机温度")
-                        .foregroundColor(.white.opacity(0.9))
-                        .font(.title2)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            .onTapGesture(count: 2) {
-                // 双击处理
-                triggerTestNotification(isUpgrade: false)
-            }
-            .onTapGesture(count: 1) {
-                // 单击处理
-                triggerTestNotification(isUpgrade: true)
+            // App 名称和图标
+            HStack(spacing: 8) {
+                // App 图标
+                Image("temp_icon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.white.opacity(0.9))
+                
+                // App 名称
+                Text("手机热度")
+                    .foregroundColor(.white.opacity(0.9))
+                    .font(.title2)
             }
             
             // 右侧按钮组
@@ -301,7 +288,7 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 25)
-        .padding(.top, 10) // 调整顶部安全距离
+        .padding(.top, 20) // 调整顶部安全距离
         .frame(maxWidth: .infinity)
     }
     
