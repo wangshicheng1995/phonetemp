@@ -192,12 +192,16 @@ struct Wave: Shape {
     }
 }
 
-// MARK: - 修改后的交互滑块
+// MARK: - 增强震动反馈的交互滑块
 struct InvisibleSlider: View {
     
     @Binding var percent: Double
     @Binding var isInteracting: Bool
     @Binding var lastInteractionTime: Date
+    
+    // 添加震动反馈控制变量
+    @State private var lastDragTime: Date = Date()
+    @State private var dragThrottleInterval: TimeInterval = 0.05 // 限制震动频率为每50毫秒一次
     
     var body: some View {
         GeometryReader { geo in
@@ -213,12 +217,18 @@ struct InvisibleSlider: View {
                         self.percent = clampedPercent
                     }
                     
-                    // 提供触觉反馈
+                    // 为每次拖动提供轻度震动反馈（带频率限制）
+                    provideDragFeedback()
+                    
+                    // 提供状态变化的触觉反馈
                     provideTactileFeedback(for: clampedPercent)
                 }
                 .onEnded { value in
                     // 拖拽结束，准备超时检测
                     lastInteractionTime = Date()
+                    
+                    // 拖拽结束时提供一次确认震动
+                    provideDragEndFeedback()
                 }
             
             Rectangle()
@@ -228,7 +238,30 @@ struct InvisibleSlider: View {
         }
     }
     
-    // MARK: - 触觉反馈
+    // MARK: - 拖动过程中的震动反馈
+    private func provideDragFeedback() {
+        let currentTime = Date()
+        
+        // 限制震动频率，避免过于频繁
+        guard currentTime.timeIntervalSince(lastDragTime) >= dragThrottleInterval else {
+            return
+        }
+        
+        lastDragTime = currentTime
+        
+        // 提供轻度震动反馈
+        let lightFeedback = UIImpactFeedbackGenerator(style: .light)
+        lightFeedback.impactOccurred()
+    }
+    
+    // MARK: - 拖拽结束时的震动反馈
+    private func provideDragEndFeedback() {
+        // 拖拽结束时提供一次稍强的震动作为确认
+        let mediumFeedback = UIImpactFeedbackGenerator(style: .medium)
+        mediumFeedback.impactOccurred()
+    }
+    
+    // MARK: - 状态变化的触觉反馈（保持原有逻辑）
     private func provideTactileFeedback(for percent: Double) {
         let newState = stateForPercent(percent)
         let currentState = stateForPercent(self.percent)

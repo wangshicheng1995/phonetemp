@@ -17,7 +17,6 @@ struct ContentView: View {
     @State private var showPaywall = false
     @State private var showPurchaseTest = false
     @State private var showOneTapCooling = false
-    @State private var showHint = true // 控制小箭头显示
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
@@ -85,7 +84,6 @@ struct ContentView: View {
             }
         }
         .navigationBarHidden(true)
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showCoolingTips) {
             CoolingTipsSheet(thermalState: currentThermalState)
         }
@@ -118,13 +116,6 @@ struct ContentView: View {
             if !isPreviewMode {
                 temperatureRecorder.refresh()
             }
-            
-            // 首次打开时显示箭头提示3秒后淡出
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                withAnimation(.easeOut(duration: 1.0)) {
-                    showHint = false
-                }
-            }
         }
         .onDisappear {
             if !isPreviewMode {
@@ -144,14 +135,14 @@ struct ContentView: View {
         ZStack {
             // App 名称和图标
             HStack(spacing: 8) {
-                Image("temp_icon")
+                Image("icon")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(.primary)
                 
                 Text("手机热度")
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(.primary)
                     .font(.title2)
             }
             
@@ -198,44 +189,12 @@ struct ContentView: View {
     // MARK: - 底部内容
     private var bottomContent: some View {
         VStack(spacing: 16) {
-            // 拖动提示
-            if showHint {
-                dragHintView
-            }
-            
             // 降温按钮（仅在发热状态显示）
             if currentThermalState != .normal {
                 coolingButton
             }
         }
         .padding(.bottom, 40)
-    }
-    
-    // MARK: - 拖动提示
-    private var dragHintView: some View {
-        VStack(spacing: 8) {
-            
-            HStack(spacing: 8) {
-                Image(systemName: "hand.draw")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                
-                Text("上下拖动体验不同热度")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .transition(.opacity.animation(.easeOut)) // 添加淡出过渡动画
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.black.opacity(0.3))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-        )
     }
     
     // MARK: - 降温按钮

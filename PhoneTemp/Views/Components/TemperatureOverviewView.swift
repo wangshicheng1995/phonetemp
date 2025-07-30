@@ -47,7 +47,6 @@ struct TemperatureOverviewView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
         .onAppear {
             recorder.loadTodayRecords()
         }
@@ -172,33 +171,31 @@ struct TemperatureOverviewView: View {
     private var latestRecordSection: some View {
         Group {
             if let latestRecord = currentRecords.last {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 200)
-                        .fill(Color("backColor"))
-                        .frame(height: 45)
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("最新：\(latestRecord.formattedTime)")
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                        }
-
-                        Spacer()
-
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color(latestRecord.color))
-                                .frame(width: 10, height: 10)
-                            
-                            Text(latestRecord.stateDescription)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                        }
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("最新：\(latestRecord.formattedTime)")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color(latestRecord.color))
+                            .frame(width: 10, height: 10)
+                        
+                        Text(latestRecord.stateDescription)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 200)
+                        .stroke(Color(UIColor.separator), lineWidth: 1)
+                )
                 .padding(.horizontal, 20)
             }
         }
@@ -480,7 +477,7 @@ struct StatCard: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color(.tertiarySystemGroupedBackground))
         .cornerRadius(8)
     }
 }
