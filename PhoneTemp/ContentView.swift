@@ -12,36 +12,21 @@ struct ContentView: View {
     @StateObject private var temperatureRecorder = TemperatureRecorder()
     @StateObject private var storeKitManager = UniversalStoreKitManager.shared
     
-    @State private var currentPageIndex = 0
     @State private var showCoolingTips = false
     @State private var showTemperatureOverview = false
     @State private var showPaywall = false
     @State private var showPurchaseTest = false
     @State private var showOneTapCooling = false
+    @State private var showHint = true // 控制小箭头显示
     @Environment(\.scenePhase) private var scenePhase
     
     // 用于开发阶段预览的自定义热状态
     private let customThermalState: ThermalState?
     private let isPreviewMode: Bool
     
-    // 所有热状态的顺序
-    private let allThermalStates: [ThermalState] = [.normal, .fair, .serious, .critical]
-    
-    // 获取真实热状态对应的索引
-    private var realThermalStateIndex: Int {
-        let targetState = customThermalState ?? thermalManager.currentThermalState
-        return allThermalStates.firstIndex(of: targetState) ?? 0
-    }
-    
-    // 获取当前显示的热状态
-    private var currentDisplayState: ThermalState {
-        guard currentPageIndex < allThermalStates.count else { return .normal }
-        return allThermalStates[currentPageIndex]
-    }
-    
-    // 判断当前显示的是否为真实状态
-    private var isCurrentRealState: Bool {
-        return currentPageIndex == realThermalStateIndex
+    // 获取当前真实热状态
+    private var currentThermalState: ThermalState {
+        return customThermalState ?? thermalManager.currentThermalState
     }
     
     // 默认初始化器（用于正常运行）
@@ -65,92 +50,25 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // 统一的背景 - 使用与热状态显示相同的基础色调
-                backgroundView
-            
-                VStack(spacing: 0) {
-                    // 可滑动的主要内容区域
-                    TabView(selection: $currentPageIndex) {
-                        ForEach(0..<allThermalStates.count, id: \.self) { index in
-                            ZStack {
-                                VStack(alignment: .center) {
-                                    // 热状态显示
-                                    Button(action: {
-                                        triggerHapticFeedback()
-                                        showTemperatureOverview = true
-                                    }) {
-                                        ThermalDisplayView(
-                                            thermalState: allThermalStates[index],
-                                            isCurrentState: index == realThermalStateIndex
-                                        )
-                                        .padding(.leading, 15)
-                                        .padding(.top, 20)
-                                    }
-                                    
-                                    // 底部内容和按钮
-                                    VStack {
-                                        bottomContent(for: allThermalStates[index], isRealState: index == realThermalStateIndex)
-                                    }
-                                    .padding(.bottom, 10)
-                                }
-                            }
-                            .tag(index)
-                        }
-                    }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                    .onAppear {
-                        // 启动时跳转到真实热状态页面
-                        currentPageIndex = realThermalStateIndex
-                    }
-                    .onDisappear {
-                        // 视图消失时清理资源
-                        if !isPreviewMode {
-                            temperatureRecorder.invalidate()
-                        }
-                    }
-                    .onChange(of: scenePhase) { _, newPhase in
-                        guard !isPreviewMode else { return }
-                        
-                        switch newPhase {
-                        case .background:
-                            // 应用进入后台时的处理
-                            print("ContentView: App entering background")
-                            
-                        case .active:
-                            // 应用变为活跃状态时的处理
-                            print("ContentView: App becoming active")
-                            // 刷新温度记录
-                            temperatureRecorder.refresh()
-                            
-                            // 确保当前页面显示真实状态
-                            if currentPageIndex != realThermalStateIndex {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        currentPageIndex = realThermalStateIndex
-                                    }
-                                }
-                            }
-                            
-                        case .inactive:
-                            // 应用变为非活跃状态（比如通知中心下拉时）
-                            print("ContentView: App becoming inactive")
-                            break
-                            
-                        @unknown default:
-                            break
-                        }
-                    }
-                }
+                // 主要海浪视图（全屏）
+                WaveAnimation(realThermalState: currentThermalState)
+                    .ignoresSafeArea(.all)
                 
-                // 将 topToolbar 移至 ZStack 顶层，并调整布局
+                // 顶部工具栏
                 VStack {
                     topToolbar
                     Spacer()
                 }
                 
+                // 底部内容
+                VStack {
+                    Spacer()
+                    bottomContent
+                }
+                
                 // 浮动操作按钮
                 FloatingActionButton(
-                    thermalState: currentDisplayState,
+                    thermalState: currentThermalState,
                     showCoolingTips: $showCoolingTips,
                     showTemperatureOverview: $showTemperatureOverview,
                     showOneTapCooling: $showOneTapCooling
@@ -160,16 +78,16 @@ struct ContentView: View {
                 if showOneTapCooling {
                     OneTapCoolingView(
                         isPresented: $showOneTapCooling,
-                        thermalState: currentDisplayState
+                        thermalState: currentThermalState
                     )
-                    .zIndex(999) // 确保在最顶层
+                    .zIndex(999)
                 }
             }
         }
         .navigationBarHidden(true)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showCoolingTips) {
-            CoolingTipsSheet(thermalState: currentDisplayState)
+            CoolingTipsSheet(thermalState: currentThermalState)
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
@@ -186,12 +104,9 @@ struct ContentView: View {
             
             switch newPhase {
             case .background:
-                // 应用进入后台时处理 Live Activity
                 print("App entering background")
             case .active:
-                // 应用变为活跃状态时处理 Live Activity
                 print("App becoming active")
-                // 刷新温度记录
                 temperatureRecorder.refresh()
             case .inactive:
                 break
@@ -199,37 +114,27 @@ struct ContentView: View {
                 break
             }
         }
-        .onOpenURL { url in
-            // 处理从 Live Activity 点击返回应用的 URL
-            print("App opened via URL: \(url)")
-            if url.scheme == "phoneTemp" {
-                // 这里可以添加特定的处理逻辑，比如导航到特定页面
-                print("Opened from Live Activity")
+        .onAppear {
+            if !isPreviewMode {
+                temperatureRecorder.refresh()
+            }
+            
+            // 首次打开时显示箭头提示3秒后淡出
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.easeOut(duration: 1.0)) {
+                    showHint = false
+                }
             }
         }
-    }
-    
-    // MARK: - 统一背景视图
-    private var backgroundView: some View {
-        GeometryReader { geometry in
-            let colorScheme = currentDisplayState.colorScheme
-            
-            ZStack {
-                // 基础深色背景
-                Color(red: 0.05, green: 0.08, blue: 0.08)
-                    .ignoresSafeArea(.all)
-                
-                // 全屏渐变覆盖层 - 改为线性渐变，从上到下过渡更自然
-                LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: colorScheme.outerGlow[0].opacity(0.25), location: 0.0),
-                        .init(color: colorScheme.outerGlow[1].opacity(0.1), location: 0.4),
-                        .init(color: Color.clear, location: 0.7)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea(.all)
+        .onDisappear {
+            if !isPreviewMode {
+                temperatureRecorder.invalidate()
+            }
+        }
+        .onOpenURL { url in
+            print("App opened via URL: \(url)")
+            if url.scheme == "phoneTemp" {
+                print("Opened from Live Activity")
             }
         }
     }
@@ -239,14 +144,12 @@ struct ContentView: View {
         ZStack {
             // App 名称和图标
             HStack(spacing: 8) {
-                // App 图标
                 Image("temp_icon")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 20, height: 20)
                     .foregroundColor(.white.opacity(0.9))
                 
-                // App 名称
                 Text("手机热度")
                     .foregroundColor(.white.opacity(0.9))
                     .font(.title2)
@@ -288,135 +191,93 @@ struct ContentView: View {
             }
         }
         .padding(.horizontal, 25)
-        .padding(.top, 20) // 调整顶部安全距离
+        .padding(.top, 20)
         .frame(maxWidth: .infinity)
     }
     
-    // MARK: - 新增：测试推送功能（升温/降温）
-    private func triggerTestNotification(isUpgrade: Bool) {
-        triggerHapticFeedback()
-        
-        // 显示视觉反馈（不同类型使用不同强度）
-        let impactFeedback = UIImpactFeedbackGenerator(style: isUpgrade ? .medium : .light)
-        impactFeedback.impactOccurred()
-        
-        // 发送对应类型的测试推送
-        if isUpgrade {
-            // 单击：发送升温通知（正常 → 严重发热）
-            thermalManager.getNotificationManager().sendThermalStateChangeNotification(
-                from: .normal,
-                to: .critical
-            )
-            print("ContentView: 测试升温推送已触发 (正常 → 严重发热)")
-        } else {
-            // 双击：发送降温通知（严重发热 → 正常）
-            thermalManager.getNotificationManager().sendThermalStateChangeNotification(
-                from: .critical,
-                to: .normal
-            )
-            print("ContentView: 测试降温推送已触发 (严重发热 → 正常)")
-        }
-    }
-    
-    // MARK: - 回顾按钮
-    private var overviewButton: some View {
-        VStack() {
-            Button(action: {
-                triggerHapticFeedback()
-                showTemperatureOverview = true
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 50, height: 50)
-                    
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
+    // MARK: - 底部内容
+    private var bottomContent: some View {
+        VStack(spacing: 16) {
+            // 拖动提示
+            if showHint {
+                dragHintView
             }
-            .buttonStyle(PlainButtonStyle())
             
-            Text("回顾")
-                .foregroundColor(.white.opacity(0.8))
-                .font(.system(size: 12, weight: .medium))
+            // 降温按钮（仅在发热状态显示）
+            if currentThermalState != .normal {
+                coolingButton
+            }
         }
+        .padding(.bottom, 40)
     }
     
-    // 背景材质的降级处理
-    private var backgroundMaterial: some ShapeStyle {
-        if #available(iOS 15.0, *) {
-            return AnyShapeStyle(.ultraThinMaterial)
-        } else {
-            return AnyShapeStyle(Color.black.opacity(0.3))
+    // MARK: - 拖动提示
+    private var dragHintView: some View {
+        VStack(spacing: 8) {
+            
+            HStack(spacing: 8) {
+                Image(systemName: "hand.draw")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                
+                Text("上下拖动体验不同热度")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .transition(.opacity.animation(.easeOut)) // 添加淡出过渡动画
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.3))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+    
+    // MARK: - 降温按钮
+    private var coolingButton: some View {
+        Button(action: {
+            showCoolingTipsWithFeedback()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 16, weight: .medium))
+                
+                Text("查看降温建议")
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(Color.white.opacity(0.15))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 25)
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
     // MARK: - 震动反馈方法
     private func triggerHapticFeedback() {
-        // 统一使用轻微震动
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
     
     // MARK: - 降温提示触发方法
     private func showCoolingTipsWithFeedback() {
-        // 先触发震动反馈
         triggerHapticFeedback()
         
-        // 稍微延迟显示界面，让震动效果更明显
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             showCoolingTips = true
         }
-    }
-    
-    // MARK: - 底部内容
-    private func bottomContent(for thermalState: ThermalState, isRealState: Bool) -> some View {
-        VStack(spacing: 16) {
-            if thermalState == .normal {
-                // 正常状态时显示文字
-                if isRealState {
-                    Text("😋看起来一切正常")
-                        .foregroundColor(.white.opacity(0.8))
-                        .font(.system(size: 13, weight: .medium))
-                        .multilineTextAlignment(.center)
-                        .padding(.leading, 15)
-                }
-            } else {
-                // 发热状态显示降温Tips按钮和提示文字
-                VStack(spacing: 12) {
-                    // 降温Tips按钮
-                    Button(action: {
-                        showCoolingTipsWithFeedback()
-                    }) {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.white.opacity(0.8), lineWidth: 5)
-                                .frame(width: 60, height: 60)
-                            
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 40, weight: .medium))
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    // 可点击的文本
-                    Button(action: {
-                        showCoolingTipsWithFeedback()
-                    }) {
-                        Text("轻点查看降温 Tips")
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-                .padding(.leading, 15)
-            }
-        }
-        .frame(height: 100)
-        .padding(.bottom, -10)
     }
 }
 

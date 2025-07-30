@@ -66,6 +66,7 @@
 				Models/TemperatureRecord.swift,
 				Models/ThermalActivityAttributes.swift,
 				Models/ThermalState.swift,
+				Models/ThermalWaveConfiguration.swift,
 			);
 			target = 5FEE72752E262E4B00FF44CF /* PhoneTempWidgetExtension */;
 		};
