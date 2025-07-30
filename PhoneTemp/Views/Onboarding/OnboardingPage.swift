@@ -10,15 +10,19 @@ import SwiftUI
 // MARK: - 引导页面数据模型
 struct OnboardingPage: Identifiable {
     let id = UUID()
+    let welcome: String
     let title: String
+    let appName: String
     let subtitle: String
     let backgroundImage: String
     let showPayment: Bool
     
     static let pages: [OnboardingPage] = [
         OnboardingPage(
-            title: "欢迎使用\n手机热度",
-            subtitle: "让您的设备更健康，使用更持久",
+            welcome: "欢迎使用",
+            title: "您的手机温度管家",
+            appName: "手机热度",
+            subtitle: "让您更了解手机的发热情况",
             backgroundImage: "onboarding4",
             showPayment: true
         )
@@ -185,27 +189,29 @@ struct OnboardingPageView: View {
                     Spacer()
                     
                     // 文字内容区域 - 位于屏幕下方约1/3处
-                    VStack(spacing: 12) {
-                        // 主标题 - 更大更粗
-                        Text(page.title)
-                            .font(.system(size: 42, weight: .heavy))
+                    VStack(spacing: 10) {
+                        Text(page.welcome)
+                            .font(.system(size: 22, weight: .light))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.leading)
                             .lineSpacing(2)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        // 副标题 - 稍小的字体
-                        Text(page.subtitle)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.85))
+                        Text(page.title)
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(.white)
                             .multilineTextAlignment(.leading)
-                            .lineSpacing(2)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(page.appName)
+                            .font(.system(size: 42, weight: .heavy))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, -8)
                     }
                     .padding(.horizontal, 25)
                     
                     // 底部间距
-                    Spacer().frame(height: 180)
+                    Spacer().frame(height: 140)
                     
                     // 底部间距
                     Spacer().frame(height: 140)
