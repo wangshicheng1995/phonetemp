@@ -101,8 +101,9 @@ struct OnboardingView: View {
                 Text("·").foregroundColor(.white.opacity(0.3))
                 
                 Button("隐私政策") {
-                    // 打开隐私政策
-                    openPrivacyPolicy()
+                    if let url = URL(string: "https://wangshicheng1995.github.io/phonetemp/privacy.html") {
+                        UIApplication.shared.open(url)
+                    }
                 }
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
@@ -111,8 +112,9 @@ struct OnboardingView: View {
                 Text("·").foregroundColor(.white.opacity(0.3))
                 
                 Button("用户协议") {
-                    // 打开用户协议
-                    openTermsOfService()
+                    if let url = URL(string: "https://wangshicheng1995.github.io/phonetemp/terms.html") {
+                        UIApplication.shared.open(url)
+                    }
                 }
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
