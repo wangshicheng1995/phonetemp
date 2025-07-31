@@ -163,7 +163,6 @@ struct PaywallView: View {
                 .padding(.bottom, 40)
             }
         }
-        .preferredColorScheme(.dark)
     }
     
     private func handlePurchase() {

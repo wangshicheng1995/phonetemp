@@ -145,41 +145,6 @@ struct ContentView: View {
                     .foregroundColor(.primary)
                     .font(.title2)
             }
-            
-            // 右侧按钮组
-            HStack {
-                Spacer()
-                
-                // 升级按钮（仅在未购买时显示）
-                if !isPreviewMode && !storeKitManager.isPremiumUnlocked {
-                    Button(action: {
-                        triggerHapticFeedback()
-                        showPaywall = true
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "crown.fill")
-                                .font(.caption)
-                                .foregroundColor(.yellow)
-                            
-                            Text("升级")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white.opacity(0.1))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                )
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
         }
         .padding(.horizontal, 25)
         .padding(.top, 20)

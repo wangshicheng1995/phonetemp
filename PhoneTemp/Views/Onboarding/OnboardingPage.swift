@@ -55,7 +55,6 @@ struct OnboardingView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
     
     // MARK: - 付费选项
